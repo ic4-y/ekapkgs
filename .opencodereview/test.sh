@@ -14,7 +14,7 @@ cd "$REPO"
 
 OCR="${OCR:-}"
 if [ -z "$OCR" ]; then
-  for candidate in "$REPO/result/bin/ocr" "$(command -v ocr 2>/dev/null || true)"; do
+  for candidate in "$REPO/result/bin/ocr" "$(command -v ocr 2>/dev/null)"; do
     if [ -n "$candidate" ] && [ -x "$candidate" ]; then OCR="$candidate"; break; fi
   done
 fi
@@ -29,9 +29,6 @@ RULE_MD=".opencodereview/rules/ekapkgs.md"
 fails=0
 pass() { printf 'ok   - %s\n' "$1"; }
 fail() { printf 'FAIL - %s\n' "$1" >&2; fails=$((fails + 1)); }
-assert_contains() { # <haystack-file> <needle> <label>
-  if grep -qF -- "$2" "$1"; then pass "$3"; else fail "$3 (missing: $2)"; fi
-}
 
 # ── 1. Project rule file exists and references the rule markdown ────────────
 if [ -f "$RULE_JSON" ] && [ -f "$RULE_MD" ]; then
@@ -97,7 +94,8 @@ if [ -f "$RULE_MD" ]; then
   else
     fail "missing '## Inverted nixpkgs conventions' registry section"
   fi
-  must_not="$(grep -E '^- MUST NOT ' "$RULE_MD" || true)"
+  # No `set -e`, so a no-match grep (exit 1) is fine and yields an empty list.
+  must_not="$(grep -E '^- MUST NOT ' "$RULE_MD")"
   for token in "${inversions[@]}"; do
     if grep -qF -- "$token" <<<"$must_not"; then
       pass "inversion registered as MUST NOT: $token"
@@ -107,9 +105,9 @@ if [ -f "$RULE_MD" ]; then
   done
   # Pure prohibitions must not also appear as positive requirements elsewhere.
   for token in 'meta.maintainers' 'meta.teams' 'passthru.updateScript' 'pkgs/by-name'; do
-    total="$(grep -cF -- "$token" "$RULE_MD" || true)"
+    total="$(grep -cF -- "$token" "$RULE_MD")"
     within="$(grep -F -- "$token" <<<"$must_not" | wc -l)"
-    if [ "$total" = "$within" ]; then
+    if [ "$total" -eq "$within" ]; then
       pass "pure prohibition only on MUST NOT lines: $token"
     else
       fail "inverted convention '$token' also appears outside the registry"
