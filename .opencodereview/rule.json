@@ -1,0 +1,9 @@
+{
+  "rules": [
+    {
+      "path": "**/*.nix",
+      "rule": ".opencodereview/rules/ekapkgs.md",
+      "merge_system_rule": true
+    }
+  ]
+}
