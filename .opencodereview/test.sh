@@ -105,6 +105,16 @@ if [ -f "$RULE_MD" ]; then
       fail "inversion not registered as a MUST NOT line: $token"
     fi
   done
+  # Pure prohibitions must not also appear as positive requirements elsewhere.
+  for token in 'meta.maintainers' 'meta.teams' 'passthru.updateScript' 'pkgs/by-name'; do
+    total="$(grep -cF -- "$token" "$RULE_MD" || true)"
+    within="$(grep -F -- "$token" <<<"$must_not" | wc -l)"
+    if [ "$total" = "$within" ]; then
+      pass "pure prohibition only on MUST NOT lines: $token"
+    else
+      fail "inverted convention '$token' also appears outside the registry"
+    fi
+  done
 fi
 
 # ── 5. Resolution semantics: merge, replacement, and missing-ref fallback ────

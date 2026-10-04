@@ -51,11 +51,8 @@ one file per concern without changing the rule content.
 ## Rule taxonomy
 
 The rule file is its own table of contents. `.opencodereview/rules/ekapkgs.md`
-is organised into `##` sections by concern — review posture, the inverted
-nixpkgs conventions registry, derivation structure, dependencies, sources,
-versioning, `meta` attributes, phases/patches/wrapping, style, porting, then
-per-ecosystem sections (Python, Rust, Go, CMake/Meson, `pkgs-many`, EkaOS
-modules). No separate index is maintained here: read that file.
+organises the rules into `##` sections by concern and is the single source of
+truth for what is covered; this README does not maintain a parallel index.
 
 ## Provenance
 
@@ -80,11 +77,14 @@ OCR-facing restatement of the subset that a diff reviewer needs.
 ## ekapkgs deltas from nixpkgs
 
 Several upstream nixpkgs rules are **inverted** or **dropped** here. The
-canonical, machine-checked list lives in `rules/ekapkgs.md` under the
-`## Inverted nixpkgs conventions` heading, where every delta is stated as a
-single-line `- MUST NOT` prohibition. `test.sh` asserts each one is present
-there, so the list is enforced rather than hand-synchronised. Do not restate the
-list anywhere else.
+canonical text lives in `rules/ekapkgs.md` under the `## Inverted nixpkgs
+conventions` heading, where each delta is stated as a single-line `- MUST NOT`
+prohibition. `test.sh` holds an explicit identity oracle — the expected delta
+tokens — and asserts that each appears on a `MUST NOT` line, and that the
+pure-prohibition tokens appear *only* there. Adding a delta therefore means
+adding its token to that oracle as well; the oracle is what makes the list
+enforceable, not a claim that no second edit exists. Do not restate the list
+anywhere else.
 
 ## Known limitation: root `pkgs/` is never reviewed
 
@@ -144,8 +144,8 @@ the spec is local-only and `test.sh` skips cleanly when the binary is absent.
   pattern `**/*.nix`;
 - the resolved rule contains both the built-in system rule and the ekapkgs rules
   (`merge_system_rule` is doing its job);
-- every entry in the `## Inverted nixpkgs conventions` registry is present as a
-  single-line `- MUST NOT` prohibition;
+- the expected inverted-convention tokens are present on `- MUST NOT` lines in
+  the registry, and the pure-prohibition tokens appear nowhere else;
 - resolution semantics hold: file-reference inlining, replacement without
   `merge_system_rule`, missing-reference fallback, and sibling first-match-wins;
 - the documented `pkgs/` provider-directory exclusion still holds.
