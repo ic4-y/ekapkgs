@@ -7,10 +7,22 @@ merged built-in Nix rule (see `.opencodereview/README.md` for provenance).
 
 - Favour precision over recall. Report an issue only when it is likely to break
   evaluation, reproducibility, build isolation, security, or deployment.
-- Do not report formatting, attribute ordering, or whitespace: `nix fmt` (treefmt
-  with `nixfmt`) runs in CI and is the single source of truth for that.
-- Do not require a `pkgs/by-name/` layout. Ekala auto-registers packages from
-  their directory name under `pkgs/<name>/` and `pkgs-many/<name>/`.
+
+## Inverted nixpkgs conventions
+
+These upstream nixpkgs requirements do not hold here. Each is stated as a
+prohibition on purpose: `.opencodereview/test.sh` asserts that every entry below
+appears on a `- MUST NOT` line, so the reviewer must never ask for the nixpkgs
+behaviour. This section is the single registry of the ekapkgs/nixpkgs deltas,
+and every entry is one physical line (the test greps line-by-line).
+
+- MUST NOT set or require `meta.maintainers` or `meta.teams`: neither is a recognised key here and a package that sets one fails `check-meta`.
+- MUST NOT add or require `passthru.updateScript`: it is stripped when porting from nixpkgs and is not wanted in this package set.
+- MUST NOT require a `pkgs/by-name/` layout: packages are auto-registered from `pkgs/<name>/` and `pkgs-many/<name>/`.
+- MUST NOT flag formatting, attribute ordering, or whitespace, and MUST NOT ask for `nixfmt`/RFC 166 compliance: `nix fmt` enforces it in CI.
+- MUST NOT require a `package.nix` entry point: the entry point is `default.nix`.
+- MUST NOT assume the CMake or Meson configure phase runs implicitly: the `cmake.configurePhaseHook` / `meson.configurePhaseHook` hooks are explicit here.
+- MUST NOT require `doCheck = true` or flag an unset `doCheck`: it defaults to false here; coverage is expressed through `passthru.tests`.
 
 ## Evaluation and derivation structure
 
@@ -68,8 +80,6 @@ merged built-in Nix rule (see `.opencodereview/README.md` for provenance).
 - For prebuilt binaries or vendored native code that is not built from source,
   set `meta.sourceProvenance` (`lib.sourceTypes.binaryNativeCode` and friends).
 - Add a `meta.changelog` URL when upstream publishes releases.
-- Never require `meta.maintainers` or `meta.teams`: they are forbidden here and
-  a package that sets them fails `check-meta`.
 
 ## Phases, patches, and wrapping
 
@@ -89,8 +99,6 @@ merged built-in Nix rule (see `.opencodereview/README.md` for provenance).
 
 - Avoid a blanket `with lib;`. Prefer qualified `lib.` references, which keep the
   evaluation scope small.
-- Do not add a `passthru.updateScript` to a ported package: it is stripped when
-  porting from nixpkgs and is not wanted in this package set.
 
 ## Porting a package from nixpkgs
 

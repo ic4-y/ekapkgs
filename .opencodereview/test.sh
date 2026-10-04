@@ -77,17 +77,34 @@ else
   fail "resolved rule is missing built-in or ekapkgs content"
 fi
 
-# ── 4. Inverted nixpkgs rules are prohibitions, never requirements ──────────
-# Every line mentioning these must negate them.
+# ── 4. Inverted nixpkgs conventions live in one MUST NOT registry ───────────
+# Every ekapkgs/nixpkgs delta must be registered as a "MUST NOT" line in the
+# rule file, so the reviewer is never asked for the nixpkgs behaviour. The check
+# is structural (line prefix), not a guess over wording.
+inversions=(
+  'meta.maintainers'
+  'meta.teams'
+  'passthru.updateScript'
+  'pkgs/by-name'
+  'nixfmt'
+  'package.nix'
+  'configurePhaseHook'
+  'doCheck'
+)
 if [ -f "$RULE_MD" ]; then
-  bad="$(grep -nE '(meta\.maintainers|passthru\.updateScript)' "$RULE_MD" \
-    | grep -viE 'not|never|forbidden|remove|strip|drops?|inverse|instead' || true)"
-  if [ -z "$bad" ]; then
-    pass "maintainers/updateScript appear only as prohibitions"
+  if grep -qE '^## Inverted nixpkgs conventions' "$RULE_MD"; then
+    pass "inverted-conventions registry present"
   else
-    fail "rule text positively requires an inverted nixpkgs convention:"
-    printf '%s\n' "$bad" >&2
+    fail "missing '## Inverted nixpkgs conventions' registry section"
   fi
+  must_not="$(grep -E '^- MUST NOT ' "$RULE_MD" || true)"
+  for token in "${inversions[@]}"; do
+    if grep -qF -- "$token" <<<"$must_not"; then
+      pass "inversion registered as MUST NOT: $token"
+    else
+      fail "inversion not registered as a MUST NOT line: $token"
+    fi
+  done
 fi
 
 # ── 5. Resolution semantics: merge, replacement, and missing-ref fallback ────
