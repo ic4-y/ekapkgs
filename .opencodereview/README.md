@@ -50,22 +50,12 @@ one file per concern without changing the rule content.
 
 ## Rule taxonomy
 
-`rules/ekapkgs.md` is organised by concern:
-
-| Section | Covers |
-| --- | --- |
-| Review posture | precision over recall; never flag formatting; no `by-name` layout |
-| Evaluation and derivation structure | `finalAttrs` over `rec`, no dangling refs |
-| Dependencies | `nativeBuildInputs` vs `buildInputs`, `strictDeps`, `checkInputs` |
-| Sources and fetching | pinned hashes, `tag` over `rev`, `refs/tags/` |
-| Versioning | must start with a digit, `0-unstable-YYYY-MM-DD` |
-| `meta` attributes | description/license/platforms/`mainProgram`/`sourceProvenance` |
-| Phases, patches, wrapping | hook discipline, patch comments, `makeBinaryWrapper` |
-| Structure and style | avoid `with lib;` |
-| Porting from nixpkgs | ekapkgs deltas (see below) |
-| Python / Rust / Go / CMake+Meson | build-system specifics |
-| Multi-version packages | `pkgs-many` three-file pattern |
-| EkaOS modules | option declarations, `settings`, `services.*` |
+The rule file is its own table of contents. `.opencodereview/rules/ekapkgs.md`
+is organised into `##` sections by concern — review posture, the inverted
+nixpkgs conventions registry, derivation structure, dependencies, sources,
+versioning, `meta` attributes, phases/patches/wrapping, style, porting, then
+per-ecosystem sections (Python, Rust, Go, CMake/Meson, `pkgs-many`, EkaOS
+modules). No separate index is maintained here: read that file.
 
 ## Provenance
 
@@ -89,18 +79,12 @@ OCR-facing restatement of the subset that a diff reviewer needs.
 
 ## ekapkgs deltas from nixpkgs
 
-Several upstream nixpkgs rules are **inverted** or **dropped** here. A rule that
-survives review must respect these:
-
-| nixpkgs rule | ekapkgs treatment |
-| --- | --- |
-| New packages *must* set `meta.maintainers` | **Inverted** — `meta.maintainers`/`meta.teams` are forbidden and fail `check-meta` |
-| Add `passthru.updateScript` for automation | **Inverted** — `updateScript` is stripped when porting from nixpkgs |
-| Use the `pkgs/by-name/` layout | **Dropped** — packages are auto-registered from `pkgs/<name>/` |
-| Format with `nixfmt`/RFC 166, and review it | **Dropped** — CI enforces `nix fmt`; the reviewer must not flag formatting |
-| `package.nix` entry point | **Renamed** — ekapkgs uses `default.nix` |
-| Implicit CMake/Meson configure phases | **Explicit** — `cmake.configurePhaseHook` / `meson.configurePhaseHook` |
-| `doCheck = true` by default | **Inverted** — `doCheck` defaults to `false`; use `passthru.tests` |
+Several upstream nixpkgs rules are **inverted** or **dropped** here. The
+canonical, machine-checked list lives in `rules/ekapkgs.md` under the
+`## Inverted nixpkgs conventions` heading, where every delta is stated as a
+single-line `- MUST NOT` prohibition. `test.sh` asserts each one is present
+there, so the list is enforced rather than hand-synchronised. Do not restate the
+list anywhere else.
 
 ## Known limitation: root `pkgs/` is never reviewed
 
@@ -124,17 +108,24 @@ root-level `*.nix` (`top-level.nix`, `all-packages.nix`, `pkgs-module.nix`,
 
 Because `pkgs/` is where new packages live, this is a **hard blocker for the
 primary goal** while OCR 1.12.11 is unpatched. The fix is to remove `"pkgs/"`
-from `providerDirIgnoreDirs` in the packaged open-code-review (or upstream it);
-that is tracked as follow-up work, outside Phase 1. `test.sh` pins the current
-behaviour so the limitation cannot regress silently, and so the day it is fixed
-the test flags it for an update.
+from `providerDirIgnoreDirs` in the packaged open-code-review (or upstream it),
+which is outside this repository's control and therefore Phase-1 follow-up work.
+Issue tracking is disabled on this fork, so the follow-up is tracked in-tree
+rather than in a forge issue: `test.sh` pins the current behaviour, so when the
+upstream list changes the assertion fails and points back at this section.
+
+A related follow-up: `test.sh` is not yet run by CI — open-code-review is not
+packaged on `master`, so there is nothing for a workflow to invoke. Until it is,
+the spec is local-only and `test.sh` skips cleanly when the binary is absent.
 
 ## Adding or changing a rule
 
 1. Edit `.opencodereview/rules/ekapkgs.md`. Keep the review posture: precise,
    actionable, and never a formatting or attribute-order remark.
-2. If the rule touches an ekapkgs-vs-nixpkgs divergence, update the deltas table
-   above as well.
+2. If the rule is a new ekapkgs-vs-nixpkgs divergence, add it to the
+   `## Inverted nixpkgs conventions` registry in the same file as a single-line
+   `- MUST NOT` entry, and add any new token it needs to the `inversions` list in
+   `test.sh`.
 3. Run `./.opencodereview/test.sh` (needs the OCR binary; set `OCR=/path/to/ocr`
    to override discovery at `./result/bin/ocr` or `$PATH`).
 4. To see the exact text the model will receive for a path:
@@ -153,8 +144,8 @@ the test flags it for an update.
   pattern `**/*.nix`;
 - the resolved rule contains both the built-in system rule and the ekapkgs rules
   (`merge_system_rule` is doing its job);
-- the inverted nixpkgs conventions appear only as prohibitions, never as
-  requirements;
+- every entry in the `## Inverted nixpkgs conventions` registry is present as a
+  single-line `- MUST NOT` prohibition;
 - resolution semantics hold: file-reference inlining, replacement without
   `merge_system_rule`, missing-reference fallback, and sibling first-match-wins;
 - the documented `pkgs/` provider-directory exclusion still holds.
