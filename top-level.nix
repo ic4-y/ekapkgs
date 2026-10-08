@@ -96,6 +96,24 @@ final: prev: {
     final.callPackage ./build-support/postgresql/postgresqlBuildExtension.nix
       { };
 
+  # corepkgs dropped the LLVM <20 compiler-rt patch (llvm/llvm-project@59978b2)
+  # that fixes the `__sanitizer::termio` type against glibc 2.42. Without it,
+  # compiler-rt-libc (and therefore llvmPackages_19.stdenv, used to build
+  # ClickHouse) fails to compile. Re-apply the upstream patch.
+  llvmPackages_19 = prev.llvmPackages_19.overrideScope (
+    lfinal: lprev: {
+      compiler-rt-libc = lprev.compiler-rt-libc.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [
+          (final.fetchpatch {
+            url = "https://github.com/llvm/llvm-project/commit/59978b21ad9c65276ee8e14f26759691b8a65763.patch";
+            hash = "sha256-ys5SMLfO3Ay9nCX9GV5yRCQ6pLsseFu/ZY6Xd6OL4p0=";
+            relative = "compiler-rt";
+          })
+        ];
+      });
+    }
+  );
+
   # Fix duktape: ensure libm is linked into the shared library.
   # LDFLAGS=-lm is placed before the source file by Makefile.sharedlibrary,
   # so the linker drops it. Append -lm via NIX_LDFLAGS to fix IFUNC resolution
