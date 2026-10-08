@@ -4,7 +4,7 @@ Canonical inventory of database / data-store packages in ekapkgs (plus the
 corepkgs base it overlays): what is present, what was added by this effort, and
 what remains with the exact blocker for each.
 
-Last updated: 2026-10-08 (added rethinkdb, solr, accumulo, m3db, cortex, usearch, keydb, orientdb, hugegraph, opentsdb)
+Last updated: 2026-10-08 (added rethinkdb, solr, accumulo, m3db, cortex, usearch, keydb, orientdb, hugegraph, opentsdb, +11 PG extensions)
 
 Legend: **effort** S/M/L/XL (build+port cost); **build** = how it compiles.
 `present` rows show where the package lives; `missing` rows show the blocker.
@@ -41,6 +41,17 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `pg_topn` | PGXS | CREATE EXTENSION pg_topn |
 | `pg_safeupdate` | PGXS | version-keyed (1.5) |
 | `pgvectorscale` | pgrx | CREATE EXTENSION vectorscale (pgrx works) |
+| `age` | PGXS | CREATE EXTENSION age + Cypher CREATE returns a vertex |
+| `wal2json` | PGXS (logical decoding) | slot decodes an INSERT into JSON |
+| `pg_hll` | PGXS | hll_cardinality of an added element |
+| `pg_net` | PGXS (curl) | CREATE EXTENSION pg_net (shared_preload_libraries) |
+| `pg_roaringbitmap` | PGXS | rb_to_array(rb_build('{1,2,3}')) = {1,2,3} |
+| `plpgsql_check` | PGXS | CREATE EXTENSION plpgsql_check |
+| `pg_bigm` | PGXS | CREATE EXTENSION pg_bigm |
+| `temporal_tables` | PGXS | CREATE EXTENSION temporal_tables |
+| `pg_squeeze` | PGXS | CREATE EXTENSION pg_squeeze (shared_preload_libraries) |
+| `pg_csv` | PGXS | CREATE EXTENSION pg_csv |
+| `pg_rational` | PGXS | SELECT '7/3'::rational = 7/3 |
 
 ### Extensions still missing
 
@@ -52,7 +63,8 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `pgvecto-rs` | pgrx | upstream marks `broken` for PG ≥ 17 (we are 17.11); also needs cargo-pgrx 0.12-alpha |
 | `vectorchord` | pgrx | needs `cargo-pgrx` 0.16.0 (have 0.16.1) |
 | `pg_search` (ParadeDB) | pgrx | no expression in pinned nixpkgs |
-| Other nixpkgs `ext/*` | PGXS | unported but buildable on demand: `age`, `anonymizer`, `apache_datasketches`, `pg_net`, `pg_graphql`, `pgroonga`, `pgrouting`, `postgis`, `wal2json`, `pg_ivm`, etc. |
+| `pgrouting` | PGXS/CMake | hard-requires the `postgis` extension, whose build needs `gdal` (absent from corepkgs) |
+| Other nixpkgs `ext/*` | PGXS | unported but buildable on demand: `anonymizer`, `apache_datasketches`, `apache_datasketches`, `pgroonga`, `pg_auto_failover`, `repmgr`, `smlar` (PG<16), `postgis`, etc. |
 
 ---
 
