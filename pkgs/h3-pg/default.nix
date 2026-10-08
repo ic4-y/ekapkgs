@@ -29,7 +29,10 @@ postgresqlBuildExtension (finalAttrs: {
       --replace-fail "INTERPROCEDURAL_OPTIMIZATION TRUE" ""
   '';
 
-  nativeBuildInputs = [ cmake ];
+  nativeBuildInputs = [
+    cmake
+    cmake.configurePhaseHook
+  ];
 
   buildInputs = [ h3 ];
 

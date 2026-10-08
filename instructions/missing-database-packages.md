@@ -141,10 +141,11 @@ pgext 3, document 1, object-store 1).
 
 ## 3. Build infrastructure notes
 
-- **corepkgs cmake hook**: the `cmake` setup-hook defines `cmakeConfigurePhase`
-  but never assigns it to `configurePhase`; packages must add
-  `cmake.configurePhaseHook` to `nativeBuildInputs`. Needed by `timescaledb`,
-  `duckdb`, `faiss`, `h3-pg`. (nixpkgs assigns it automatically.)
+- **corepkgs cmake hook**: corepkgs' `cmake` setup-hook defines
+  `cmakeConfigurePhase` but never assigns it to `configurePhase`, whereas
+  nixpkgs assigns it automatically. Every CMake package must therefore add
+  `cmake.configurePhaseHook` to `nativeBuildInputs`. Used here by
+  `timescaledb`, `duckdb`, `faiss`, and `h3-pg`.
 - **`pg_config` passthru + `postgresqlBuildExtension`** live in
   `build-support/postgresql/` and are wired via `top-level.nix`. `postgresql` is
   single-version (17.11); no `postgresqlPackages` scope yet.
