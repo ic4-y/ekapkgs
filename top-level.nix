@@ -122,6 +122,13 @@ final: prev: {
     NIX_LDFLAGS = (old.NIX_LDFLAGS or "") + " -lm";
   });
 
+  # croaring's CMake config requires cmocka >= 2.0.0, but corepkgs ships 1.1.8,
+  # so the configure step fails even though cmocka is test-only. Disable the
+  # test build (manticore depends on croaring).
+  croaring = prev.croaring.overrideAttrs (old: {
+    cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DENABLE_ROARING_TESTS=OFF" ];
+  });
+
   # Break qt6 <-> doxygen cycle: doxygen optionally depends on qt6,
   # but qt6.qtbase transitively depends on doxygen through libxml2.
   doxygen = prev.doxygen.override { qt6 = null; };
