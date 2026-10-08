@@ -240,6 +240,8 @@ final: prev: {
       final.dnspython
     ];
 
+    # Upstream's test suite needs a running etcd instance (etcd_3_4, absent
+    # from this package set) and patches to its own test files.
     doCheck = false;
 
     meta = {
@@ -269,6 +271,7 @@ final: prev: {
       patchShebangs setup.py
     '';
 
+    # Upstream's check runs `make reg`, which needs the full VCS toolchain.
     doCheck = false;
 
     meta = {
