@@ -191,4 +191,98 @@ final: prev: {
     };
   };
 
+  # pysyncobj: replication library required by patroni. Upstream nixpkgs.
+  pysyncobj = final.buildPythonPackage rec {
+    pname = "pysyncobj";
+    version = "0.3.14";
+    pyproject = true;
+
+    src = final.pkgs.fetchFromGitHub {
+      owner = "bakwc";
+      repo = "PySyncObj";
+      tag = "v${version}";
+      hash = "sha256-a1fECsLIEFu9Wwai0viR/lkqWVWBKs+OdxHey3Pltmo=";
+    };
+
+    build-system = [ final.setuptools ];
+
+    # Tests require network features
+    doCheck = false;
+
+    pythonImportsCheck = [ "pysyncobj" ];
+
+    meta = {
+      description = "Python library for replicating your class";
+      homepage = "https://github.com/bakwc/PySyncObj";
+      changelog = "https://github.com/bakwc/PySyncObj/releases/tag/v${version}";
+      license = final.pkgs.lib.licenses.mit;
+      mainProgram = "syncobj_admin";
+    };
+  };
+
+  # python-etcd: required by patroni. Upstream nixpkgs.
+  python-etcd = final.buildPythonPackage {
+    pname = "python-etcd";
+    version = "0.5.0-unstable-2023-10-31";
+    pyproject = true;
+
+    src = final.pkgs.fetchFromGitHub {
+      owner = "jplana";
+      repo = "python-etcd";
+      rev = "5aea0fd4461bd05dd96e4ad637f6be7bceb1cee5";
+      hash = "sha256-eVirStLOPTbf860jfkNMWtGf+r0VygLZRjRDjBMCVKg=";
+    };
+
+    build-system = [ final.setuptools ];
+
+    dependencies = [
+      final.urllib3
+      final.dnspython
+    ];
+
+    doCheck = false;
+
+    meta = {
+      description = "Python client for Etcd";
+      homepage = "https://github.com/jplana/python-etcd";
+      license = final.pkgs.lib.licenses.mit;
+    };
+  };
+
+  # ydiff: required by patroni (optional side-by-side diff). Upstream nixpkgs,
+  # minus the VCS-path substitutions, which would force heavy subversion/p4
+  # builds at package-build time; ydiff resolves its VCS tools from PATH at
+  # runtime instead.
+  ydiff = final.buildPythonPackage rec {
+    pname = "ydiff";
+    version = "1.5";
+    format = "setuptools";
+
+    src = final.pkgs.fetchFromGitHub {
+      owner = "ymattw";
+      repo = "ydiff";
+      tag = version;
+      hash = "sha256-9a7M6+CqGRvO1yainImN2RQVH3XMxE9PTLXJGKekXLg=";
+    };
+
+    patchPhase = ''
+      substituteInPlace tests/test_ydiff.py \
+        --replace-fail /bin/rm rm \
+        --replace-fail /bin/sh sh
+      patchShebangs setup.py
+      patchShebangs tests/*.sh
+    '';
+
+    nativeCheckInputs = [ final.pygments ];
+
+    doCheck = false;
+
+    meta = {
+      description = "View colored, incremental diff in workspace or from stdin";
+      mainProgram = "ydiff";
+      homepage = "https://github.com/ymattw/ydiff";
+      license = final.pkgs.lib.licenses.bsd3;
+    };
+  };
+
 }
