@@ -96,12 +96,9 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 
 | Package | Category | Build | Effort | Blocker |
 |---|---|---|---|---|
-| `hbase` | wide-column | Java/Maven | M | not ported (expression in nixpkgs `servers/hbase`) |
 | `accumulo` | wide-column | Java/Maven | M | not ported |
-| `cassandra` | wide-column | Java/Gradle | L | not ported |
 | `scylladb` | wide-column | seastar C++ | XL | intrinsic; seastar toolchain |
 | `solr` | search | Java binary | M | no expression in pinned nixpkgs |
-| `manticore` | search | CMake | L | not ported |
 | `pulsar` | streaming | Java/Maven | L | expression exists but heavy |
 | `rabbitmq-server` | streaming | Erlang/Mix | L | needs the `beamPackages` scope — ekala-project/corepkgs#224 |
 | `emqx` | streaming | Erlang/Mix | L | needs the `beamPackages` scope — ekala-project/corepkgs#224 |
@@ -109,14 +106,12 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `spark` | batch | Scala/sbt | XL | no sbt toolchain |
 | `m3db` | TSDB | Go | M | no expression in pinned nixpkgs |
 | `cortex` | TSDB | Go | L | no expression in pinned nixpkgs |
-| `graphite-web` | TSDB/graphing | Python | M | needs `django-tagging` (absent) |
 | `opentsdb` | TSDB | Java | L | expression exists but heavy (jdk8, maven artifacts) |
 | `pinot` | OLAP | Java/Maven | XL | intrinsic |
 | `trino` | OLAP | Java/Maven | XL | intrinsic |
 | `presto` | OLAP | Java/Maven | XL | intrinsic |
 | `doris` / `starrocks` | OLAP | Java+C++ | XL | intrinsic |
 | `tikv` | KV | Rust | XL | intrinsic |
-| `firebird` | RDBMS | CMake | L | expression exists |
 | `yugabyte` | RDBMS | C++/CMake | XL | intrinsic |
 | `rethinkdb` | document | C++ | L | no server expression (python module only) |
 | `hugegraph` | graph | Java/Maven | L | not ported |
@@ -133,9 +128,9 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `redisearch` | search | C module | M | needs module build support |
 | `mssql` / `oracle` / `db2` | RDBMS | proprietary | — | not redistributable |
 
-**Remaining count:** ~42 missing across these categories (vector 3, graph 4,
-wide-column 4, streaming 6, OLAP 5, TSDB 4, RDBMS 3, search 2, KV 3, plus
-pgext 3, document 1, object-store 1).
+**Remaining count:** ~37 missing databases (wide-column 2, streaming 6, OLAP 6,
+TSDB 3, RDBMS 2, search 3, graph 4, KV 3, plus pgext 3, document 1,
+object-store 1, and 3 proprietary).
 
 ---
 
