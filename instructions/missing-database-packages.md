@@ -4,7 +4,7 @@ Canonical inventory of database / data-store packages in ekapkgs (plus the
 corepkgs base it overlays): what is present, what was added by this effort, and
 what remains with the exact blocker for each.
 
-Last updated: 2026-10-08
+Last updated: 2026-10-08 (rethinkdb, solr, accumulo, m3db, cortex added)
 
 Legend: **effort** S/M/L/XL (build+port cost); **build** = how it compiles.
 `present` rows show where the package lives; `missing` rows show the blocker.
@@ -80,6 +80,11 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `clickhouse` | OLAP | C++/CMake (own LLVM) | `clickhouse local` SQL query |
 | `chromadb` | vector | Python/Rust (maturin) | live server heartbeat + create collection |
 | `milvus` | vector | binary (milvus-lite wheel) | live server + pymilvus insert |
+| `firebird` | RDBMS | CMake | isql create DB + query |
+| `cassandra` | wide-column | Java binary (java.v11) | live server + cqlsh query |
+| `hbase` | wide-column | Java binary (java.v11) | `hbase version` |
+| `manticore` | search | CMake | indexer builds a 2-doc index |
+| `graphite-web` | TSDB/graphing | Python | builds + `graphite` imports |
 
 ### Present (pre-existing)
 
@@ -96,16 +101,12 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 
 | Package | Category | Build | Effort | Blocker |
 |---|---|---|---|---|
-| `accumulo` | wide-column | Java/Maven | M | not ported |
 | `scylladb` | wide-column | seastar C++ | XL | intrinsic; seastar toolchain |
-| `solr` | search | Java binary | M | no expression in pinned nixpkgs |
 | `pulsar` | streaming | Java/Maven | L | expression exists but heavy |
 | `rabbitmq-server` | streaming | Erlang/Mix | L | needs the `beamPackages` scope — ekala-project/corepkgs#224 |
 | `emqx` | streaming | Erlang/Mix | L | needs the `beamPackages` scope — ekala-project/corepkgs#224 |
 | `hadoop` | batch | Java/Maven | XL | intrinsic |
 | `spark` | batch | Scala/sbt | XL | no sbt toolchain |
-| `m3db` | TSDB | Go | M | no expression in pinned nixpkgs |
-| `cortex` | TSDB | Go | L | no expression in pinned nixpkgs |
 | `opentsdb` | TSDB | Java | L | expression exists but heavy (jdk8, maven artifacts) |
 | `pinot` | OLAP | Java/Maven | XL | intrinsic |
 | `trino` | OLAP | Java/Maven | XL | intrinsic |
@@ -113,7 +114,6 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `doris` / `starrocks` | OLAP | Java+C++ | XL | intrinsic |
 | `tikv` | KV | Rust | XL | intrinsic |
 | `yugabyte` | RDBMS | C++/CMake | XL | intrinsic |
-| `rethinkdb` | document | C++ | L | no server expression (python module only) |
 | `hugegraph` | graph | Java/Maven | L | not ported |
 | `memgraph` | graph | CMake | L | no expression in pinned nixpkgs |
 | `arangodb` | graph | C++/CMake | XL | intrinsic |
@@ -128,9 +128,9 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `redisearch` | search | C module | M | needs module build support |
 | `mssql` / `oracle` / `db2` | RDBMS | proprietary | — | not redistributable |
 
-**Remaining count:** ~37 missing databases (wide-column 2, streaming 6, OLAP 6,
-TSDB 3, RDBMS 2, search 3, graph 4, KV 3, plus pgext 3, document 1,
-object-store 1, and 3 proprietary).
+**Remaining count:** ~31 missing databases (streaming 3, OLAP 5, KV 4,
+graph 4, TSDB 1, wide-column 1, batch 2, object-store 1, plus pgext 3,
+vector 2, search 1, and 3 proprietary).
 
 ---
 
