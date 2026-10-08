@@ -4,7 +4,7 @@ Canonical inventory of database / data-store packages in ekapkgs (plus the
 corepkgs base it overlays): what is present, what was added by this effort, and
 what remains with the exact blocker for each.
 
-Last updated: 2026-10-08 (rethinkdb, solr, accumulo, m3db, cortex added)
+Last updated: 2026-10-08 (added rethinkdb, solr, accumulo, m3db, cortex, usearch, keydb)
 
 Legend: **effort** S/M/L/XL (build+port cost); **build** = how it compiles.
 `present` rows show where the package lives; `missing` rows show the blocker.
@@ -123,19 +123,17 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `memgraph` | graph | CMake | L | no expression in pinned nixpkgs |
 | `arangodb` | graph | C++/CMake | XL | intrinsic |
 | `orientdb` | graph | Java | L | not ported |
-| `keydb` | KV | make | M | no expression in pinned nixpkgs |
 | `dragonflydb` | KV | CMake | XL | needs `croncpp`, `flatbuffers_23`, `hnswlib` (absent) |
 | `foundationdb` | KV | CMake | XL | intrinsic (openjdk, mono, boost) |
 | `ceph` | object store | CMake | XL | intrinsic |
 | `pgvecto-rs`, `vectorchord`, `pg_search` | vector (PG) | pgrx | — | see §1 |
-| `usearch` | vector | C++ header | S | not ported |
 | `valkey-search` | vector | Rust module | M | needs module build support |
 | `redisearch` | search | C module | M | needs module build support |
 | `mssql` / `oracle` / `db2` | RDBMS | proprietary | — | not redistributable |
 
-**Remaining count:** ~31 missing databases (streaming 3, OLAP 5, KV 4,
+**Remaining count:** ~29 missing databases (streaming 3, OLAP 5, KV 3,
 graph 4, TSDB 1, wide-column 1, batch 2, object-store 1, plus pgext 3,
-vector 2, search 1, and 3 proprietary).
+vector 1, search 1, and 3 proprietary).
 
 ---
 
