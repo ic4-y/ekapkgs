@@ -71,6 +71,28 @@ final: prev: {
   # stub for packages that reference nixosTests
   nixosTests = { };
 
+  # PostgreSQL extension support.
+  # corepkgs' postgresql does not expose the `pg_config` attr that PGXS and
+  # pgrx extension builds require. Reconstruct it from the derivation's own
+  # dev-output `nix-support/pg_config.env`, attach it to `postgresql.passthru`,
+  # and expose the PGXS builder used by extension packages in pkgs/.
+  # NB: pg_config is derived from prev.postgresql (not final) to avoid a
+  # passthru self-reference cycle.
+  postgresql = prev.postgresql.overrideAttrs (old: {
+    passthru = (old.passthru or { }) // {
+      pg_config = final.callPackage ./build-support/postgresql/pg_config.nix {
+        finalPackage = old.finalPackage or prev.postgresql;
+        outputs = {
+          out = final.lib.getOutput "out" prev.postgresql;
+          man = final.lib.getOutput "man" prev.postgresql;
+        };
+      };
+    };
+  });
+  postgresqlBuildExtension =
+    final.callPackage ./build-support/postgresql/postgresqlBuildExtension.nix
+      { };
+
   # Fix duktape: ensure libm is linked into the shared library.
   # LDFLAGS=-lm is placed before the source file by Makefile.sharedlibrary,
   # so the linker drops it. Append -lm via NIX_LDFLAGS to fix IFUNC resolution
