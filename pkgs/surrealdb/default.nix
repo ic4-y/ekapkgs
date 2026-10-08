@@ -27,8 +27,9 @@ rustPlatform.buildRustPackage (finalAttrs: {
   '';
 
   # Do not point the vendored `surrealdb-librocksdb-sys` at corepkgs' rocksdb:
-  # it binds to RocksDB 10.6.2 while corepkgs ships 11.8.1, whose headers are
-  # not API-compatible. Let the crate build its own bundled RocksDB instead.
+  # the crate binds a specific RocksDB ABI which corepkgs' version does not
+  # satisfy, and its generated bindings are not header-compatible. Let the
+  # crate build its own bundled RocksDB instead.
   env = {
     PROTOC = "${protobuf}/bin/protoc";
     PROTOC_INCLUDE = "${protobuf}/include";
