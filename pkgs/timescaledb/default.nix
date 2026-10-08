@@ -21,16 +21,14 @@ postgresqlBuildExtension (finalAttrs: {
     hash = "sha256-m5aBxOOH04b0iDvApvY30uvYsFoV+WEBnKP4Ssr0t/M=";
   };
 
-  nativeBuildInputs = [ cmake ];
+  nativeBuildInputs = [
+    cmake
+    cmake.configurePhaseHook
+  ];
   buildInputs = [
     openssl
     libkrb5
   ];
-
-  # corepkgs' cmake setup-hook defines cmakeConfigurePhase but never assigns it
-  # to configurePhase (nixpkgs does). Without this, cmake's configure/build/
-  # install phases are skipped entirely and the build produces no output.
-  configurePhase = "cmakeConfigurePhase";
 
   cmakeFlags = [
     (lib.cmakeBool "SEND_TELEMETRY_DEFAULT" false)
