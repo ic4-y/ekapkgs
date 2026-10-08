@@ -76,15 +76,16 @@ final: prev: {
   # pgrx extension builds require. Reconstruct it from the derivation's own
   # dev-output `nix-support/pg_config.env`, attach it to `postgresql.passthru`,
   # and expose the PGXS builder used by extension packages in pkgs/.
-  # NB: pg_config is derived from prev.postgresql (not final) to avoid a
-  # passthru self-reference cycle.
   postgresql = prev.postgresql.overrideAttrs (old: {
     passthru = (old.passthru or { }) // {
       pg_config = final.callPackage ./build-support/postgresql/pg_config.nix {
-        finalPackage = old.finalPackage or prev.postgresql;
+        postgresql = final.postgresql;
+        # Only the placeholders actually present in the packaged pg_config.env.
+        # Do NOT derive this from postgresql.outputs: replaceVarsWith fails
+        # loudly on a replacement that matches nothing (e.g. `debug`).
         outputs = {
-          out = final.lib.getOutput "out" prev.postgresql;
-          man = final.lib.getOutput "man" prev.postgresql;
+          out = final.lib.getOutput "out" final.postgresql;
+          man = final.lib.getOutput "man" final.postgresql;
         };
       };
     };

@@ -12,9 +12,10 @@
   lib,
   replaceVarsWith,
   runtimeShell,
-  # PostgreSQL package (the final, overlaid derivation)
-  finalPackage,
-  # PostgreSQL package's outputs
+  # The PostgreSQL package this pg_config describes.
+  postgresql,
+  # The placeholders in the packaged pg_config.env that must be substituted,
+  # keyed by output name.
   outputs,
 }:
 
@@ -27,16 +28,16 @@ replaceVarsWith {
     inherit runtimeShell;
     "pg_config.env" = replaceVarsWith {
       name = "pg_config.env";
-      src = "${lib.getDev finalPackage}/nix-support/pg_config.env";
+      src = "${lib.getDev postgresql}/nix-support/pg_config.env";
       replacements = outputs;
     };
   };
   nativeCheckInputs = [ diffutils ];
   # The expected output only matches when outputs have *not* been altered by
   # postgresql.withPackages.
-  postCheck = lib.optionalString (outputs.out == lib.getOutput "out" finalPackage) ''
-    if [ -e ${lib.getDev finalPackage}/nix-support/pg_config.expected ]; then
-        diff ${lib.getDev finalPackage}/nix-support/pg_config.expected <($out/bin/pg_config)
+  postCheck = lib.optionalString (outputs.out == lib.getOutput "out" postgresql) ''
+    if [ -e ${lib.getDev postgresql}/nix-support/pg_config.expected ]; then
+        diff ${lib.getDev postgresql}/nix-support/pg_config.expected <($out/bin/pg_config)
     fi
   '';
 }
