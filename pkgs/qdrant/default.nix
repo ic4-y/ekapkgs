@@ -6,14 +6,10 @@
   pkg-config,
   openssl,
   rust-jemalloc-sys,
+  rust-jemalloc-sys-unprefixed,
   versionCheckHook,
 }:
 
-let
-  # nixpkgs exposes an unprefixed jemalloc variant as its own attr since it is
-  # not used widely enough to justify a top-level alias.
-  rust-jemalloc-sys-unprefixed = rust-jemalloc-sys.override { unprefixed = true; };
-in
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "qdrant";
   version = "1.16.3";

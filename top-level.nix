@@ -25,6 +25,9 @@ final: prev: {
   clippy = final.rust.packages.stable.clippy;
   rustfmt = final.rust.packages.stable.rustfmt;
   rustc = final.rust.packages.stable.rustc;
+  # nixpkgs exposes an unprefixed jemalloc variant as its own attr; used by
+  # qdrant and influxdb3.
+  rust-jemalloc-sys-unprefixed = final.rust-jemalloc-sys.override { unprefixed = true; };
   # Fix zeromq: disable doc generation (asciidoc binary not available)
   # TODO: remove once corepkgs zeromq fix is upstream
   zeromq = prev.zeromq.overrideAttrs (old: {
