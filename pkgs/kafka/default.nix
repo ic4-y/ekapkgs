@@ -7,7 +7,7 @@
   bash,
   coreutils,
   grep,
-  gnused,
+  sed,
   ps,
 }:
 
@@ -34,7 +34,7 @@ stdenv.mkDerivation rec {
     versionInfo.jre
     bash
     grep
-    gnused
+    sed
     coreutils
     ps
   ];
@@ -64,7 +64,7 @@ stdenv.mkDerivation rec {
             bash
             coreutils
             grep
-            gnused
+            sed
           ]
         }"
     done
