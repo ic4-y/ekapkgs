@@ -282,6 +282,45 @@ final: prev: {
     };
   };
 
+  # onnxruntime Python wheel, built from the top-level onnxruntime's `dist`
+  # output (the python-pkgs scope has no onnxruntime of its own). Needed by
+  # chromadb's default embedding function.
+  onnxruntime = final.buildPythonPackage {
+    inherit (final.pkgs.onnxruntime) pname version;
+    format = "wheel";
+    src = final.pkgs.onnxruntime.dist;
+
+    unpackPhase = ''
+      cp -r $src dist
+      chmod +w dist
+    '';
+
+    nativeBuildInputs = [ final.pkgs.autoPatchelfHook ];
+
+    pythonRemoveDeps = [
+      "flatbuffers"
+      "protobuf"
+      "sympy"
+    ];
+
+    buildInputs = [
+      final.pkgs.oneDNN
+      final.pkgs.re2
+      final.pkgs.onnxruntime.protobuf
+      final.pkgs.onnxruntime
+    ];
+
+    dependencies = with final; [
+      coloredlogs
+      numpy
+      packaging
+    ];
+
+    pythonImportsCheck = [ "onnxruntime" ];
+
+    meta = final.pkgs.onnxruntime.meta;
+  };
+
   # chromadb: AI-native embedding database. Upstream buildPythonPackage with
   # onnxruntime pulled from the top-level (the python scope lacks it) and the
   # `zstd-c` alias replaced by the plain zstd package.
@@ -314,6 +353,13 @@ final: prev: {
       substituteInPlace chromadb/config.py \
         --replace-fail "anonymized_telemetry: bool = True" \
                        "anonymized_telemetry: bool = False"
+
+      # Newer rustc (1.98) counts async-fn type layout depth more strictly;
+      # several chroma crates overflow the default recursion limit. Raise it
+      # for every crate. The attribute must be the first line of each lib.rs.
+      for lib in rust/*/src/lib.rs; do
+        sed -i '1i #![recursion_limit = "512"]' "$lib"
+      done
     '';
 
     pythonRelaxDeps = [
@@ -325,6 +371,7 @@ final: prev: {
 
     nativeBuildInputs = [
       final.pkgs.cargo
+      final.pkgs.cmake
       final.pkgs.pkg-config
       final.pkgs.protobuf
       final.pkgs.rustc
@@ -337,7 +384,7 @@ final: prev: {
     ];
 
     dependencies = [
-      final.pkgs.onnxruntime
+      final.onnxruntime
     ]
     ++ (with final; [
       bcrypt
