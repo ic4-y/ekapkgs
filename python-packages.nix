@@ -266,14 +266,8 @@ final: prev: {
     };
 
     patchPhase = ''
-      substituteInPlace tests/test_ydiff.py \
-        --replace-fail /bin/rm rm \
-        --replace-fail /bin/sh sh
       patchShebangs setup.py
-      patchShebangs tests/*.sh
     '';
-
-    nativeCheckInputs = [ final.pygments ];
 
     doCheck = false;
 
