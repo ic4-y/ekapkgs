@@ -4,7 +4,7 @@ Canonical inventory of database / data-store packages in ekapkgs (plus the
 corepkgs base it overlays): what is present, what was added by this effort, and
 what remains with the exact blocker for each.
 
-Last updated: 2026-10-08 (added rethinkdb, solr, accumulo, m3db, cortex, usearch, keydb, orientdb, hugegraph)
+Last updated: 2026-10-08 (added rethinkdb, solr, accumulo, m3db, cortex, usearch, keydb, orientdb, hugegraph, opentsdb)
 
 Legend: **effort** S/M/L/XL (build+port cost); **build** = how it compiles.
 `present` rows show where the package lives; `missing` rows show the blocker.
@@ -112,14 +112,13 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `emqx` | streaming | Erlang/Mix | L | needs the `beamPackages` scope — ekala-project/corepkgs#224 |
 | `hadoop` | batch | Java/Maven | XL | intrinsic |
 | `spark` | batch | Scala/sbt | XL | no sbt toolchain |
-| `opentsdb` | TSDB | Java | L | expression exists but heavy (jdk8, maven artifacts) |
 | `pinot` | OLAP | Java/Maven | XL | intrinsic |
 | `trino` | OLAP | Java/Maven | XL | intrinsic |
 | `presto` | OLAP | Java/Maven | XL | intrinsic |
 | `doris` / `starrocks` | OLAP | Java+C++ | XL | intrinsic |
 | `tikv` | KV | Rust | XL | intrinsic |
 | `yugabyte` | RDBMS | C++/CMake | XL | intrinsic |
-| `memgraph` | graph | CMake | L | no expression in pinned nixpkgs |
+| `memgraph` | graph | CMake + Conan2 | XL | 34 Conan requires incl. custom forks (boost/nuraft/pulsar-client-cpp `-memgraph`), no release binaries |
 | `arangodb` | graph | C++/CMake | XL | intrinsic |
 | `dragonflydb` | KV | CMake | XL | needs `croncpp`, `flatbuffers_23`, `hnswlib` (absent) |
 | `foundationdb` | KV | CMake | XL | intrinsic (openjdk, mono, boost) |
@@ -129,8 +128,8 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `redisearch` | search | C module | M | needs module build support |
 | `mssql` / `oracle` / `db2` | RDBMS | proprietary | — | not redistributable |
 
-**Remaining count:** ~27 missing databases (streaming 3, OLAP 5, KV 3,
-graph 2, TSDB 1, wide-column 1, batch 2, object-store 1, plus pgext 3,
+**Remaining count:** ~26 missing databases (streaming 3, OLAP 5, KV 3,
+graph 2, wide-column 1, batch 2, object-store 1, plus pgext 3,
 vector 1, search 1, and 3 proprietary).
 
 ---
@@ -153,6 +152,13 @@ vector 1, search 1, and 3 proprietary).
   single-version (17.11); no `postgresqlPackages` scope yet.
 - **cargo-pgrx 0.16.1** is the only pgrx version present; packages pinned to a
   different exact cargo-pgrx (pg_graphql 0.16.0) cannot build.
+- **`java.buildGradlePackage` does not fetch dependencies**: it always runs
+  `gradle --offline` with an empty cache and ignores its `gradleHash` argument,
+  so only dependency-free projects build. Tracked in ekala-project/corepkgs#226.
+  This blocks source builds of Gradle-based packages (e.g. Apache Solr); they
+  are packaged from their upstream binary tarballs instead.
+- **`jdk8`** is provided by this repo (`pkgs/jdk8`) since corepkgs' `java` scope
+  starts at 11. Needed by Java-8-era toolchains (GWT 2.6.1 in `opentsdb`).
 
 ## 4. Name traps (present but NOT the DB)
 
