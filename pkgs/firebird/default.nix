@@ -9,7 +9,7 @@
   unzip,
   libtommath,
   libtomcrypt,
-  icu73,
+  icu,
   superServer ? false,
 }:
 
@@ -33,19 +33,19 @@ let
 
     buildInputs = [
       libedit
-      icu73
+      icu.v73
     ];
 
-    LD_LIBRARY_PATH = lib.makeLibraryPath [ icu73 ];
+    LD_LIBRARY_PATH = lib.makeLibraryPath [ icu.v73 ];
 
     # The build-time step that creates the system databases (security.fdb,
     # metadata.fdb, ...) runs the freshly-built engine, which dlopens ICU.
     # Export the path again inside the build so the loader finds it.
     preBuild = ''
-      export LD_LIBRARY_PATH="${lib.makeLibraryPath [ icu73 ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      export LD_LIBRARY_PATH="${lib.makeLibraryPath [ icu.v73 ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     '';
 
-    NIX_LDFLAGS = "-L${lib.getLib icu73}/lib -licuuc -licui18n -licudata";
+    NIX_LDFLAGS = "-L${lib.getLib icu.v73}/lib -licuuc -licui18n -licudata";
 
     configureFlags = [
       "--with-system-editline"
