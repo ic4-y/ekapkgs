@@ -74,6 +74,12 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `druid` | real-time analytics | Java binary | installed |
 | `duckdb` | embeddable OLAP | CMake | live `SELECT` |
 | `faiss` | vector similarity lib | CMake | built |
+| `typesense` | search | binary | live server `{"ok":true}` |
+| `kafka` | streaming | Java binary (KRaft) | live broker + topic create/list |
+| `tidb` | RDBMS | Go (pinned go.v1_25) | live server + MySQL protocol |
+| `clickhouse` | OLAP | C++/CMake (own LLVM) | `clickhouse local` SQL query |
+| `chromadb` | vector | Python/Rust (maturin) | live server heartbeat + create collection |
+| `milvus` | vector | binary (milvus-lite wheel) | live server + pymilvus insert |
 
 ### Present (pre-existing)
 
@@ -96,7 +102,6 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `scylladb` | wide-column | seastar C++ | XL | intrinsic; seastar toolchain |
 | `solr` | search | Java binary | M | no expression in pinned nixpkgs |
 | `manticore` | search | CMake | L | not ported |
-| `kafka` | streaming | Java/Gradle | L | no by-name expression (library hits only) |
 | `pulsar` | streaming | Java/Maven | L | expression exists but heavy |
 | `rabbitmq-server` | streaming | Erlang/Mix | L | needs `beamPackages` scope (absent) |
 | `emqx` | streaming | Erlang/Mix | L | needs `beamPackages` scope (absent) |
@@ -106,12 +111,10 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `cortex` | TSDB | Go | L | no expression in pinned nixpkgs |
 | `graphite-web` | TSDB/graphing | Python | M | needs `django-tagging` (absent) |
 | `opentsdb` | TSDB | Java | L | expression exists but heavy (jdk8, maven artifacts) |
-| `clickhouse` | OLAP | C++/CMake | XL | intrinsic (huge monorepo) |
 | `pinot` | OLAP | Java/Maven | XL | intrinsic |
 | `trino` | OLAP | Java/Maven | XL | intrinsic |
 | `presto` | OLAP | Java/Maven | XL | intrinsic |
 | `doris` / `starrocks` | OLAP | Java+C++ | XL | intrinsic |
-| `tidb` | RDBMS | Go | M | expression exists; deps heavy |
 | `tikv` | KV | Rust | XL | intrinsic |
 | `firebird` | RDBMS | CMake | L | expression exists |
 | `yugabyte` | RDBMS | C++/CMake | XL | intrinsic |
@@ -126,15 +129,12 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `ceph` | object store | CMake | XL | intrinsic |
 | `pgvecto-rs`, `vectorchord`, `pg_search` | vector (PG) | pgrx | — | see §1 |
 | `usearch` | vector | C++ header | S | not ported |
-| `typesense` | vector/search | binary | M | expression exists (needs `sources.json`) |
-| `milvus` | vector | Go+C++ | XL | intrinsic |
-| `chromadb` | vector | Rust/Python | L | not ported |
 | `valkey-search` | vector | Rust module | M | needs module build support |
 | `redisearch` | search | C module | M | needs module build support |
 | `mssql` / `oracle` / `db2` | RDBMS | proprietary | — | not redistributable |
 
-**Remaining count:** ~47 missing across these categories (vector 9, graph 4,
-wide-column 4, streaming 6, OLAP 6, TSDB 4, RDBMS 4, search 2, KV 3, plus
+**Remaining count:** ~42 missing across these categories (vector 3, graph 4,
+wide-column 4, streaming 6, OLAP 5, TSDB 4, RDBMS 3, search 2, KV 3, plus
 pgext 3, document 1, object-store 1).
 
 ---
@@ -145,8 +145,13 @@ pgext 3, document 1, object-store 1).
   `cmakeConfigurePhase` but never assigns it to `configurePhase`, whereas
   nixpkgs assigns it automatically. Packages whose build drives `cmake` as the
   configure phase must add `cmake.configurePhaseHook` to `nativeBuildInputs`
-  (`timescaledb`, `duckdb`, `faiss`, `h3-pg`). h3-pg also ships an upstream
-  Makefile shim, so the hook is redundant-but-harmless there.
+  (`timescaledb`, `duckdb`, `faiss`, `h3-pg`, `onnxruntime`, `oneDNN`,
+  `clickhouse`).
+- **corepkgs compiler-rt**: corepkgs dropped the LLVM <20 `compiler-rt` patch
+  (llvm/llvm-project@59978b2) that fixes the `__sanitizer::termio` type against
+  glibc 2.42. Without it `llvmPackages_19.compiler-rt-libc` — and therefore
+  `llvmPackages_19.stdenv`, used to build ClickHouse — fails to compile.
+  Re-applied via `top-level.nix`.
 - **`pg_config` passthru + `postgresqlBuildExtension`** live in
   `build-support/postgresql/` and are wired via `top-level.nix`. `postgresql` is
   single-version (17.11); no `postgresqlPackages` scope yet.
