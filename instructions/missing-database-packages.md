@@ -103,8 +103,8 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `solr` | search | Java binary | M | no expression in pinned nixpkgs |
 | `manticore` | search | CMake | L | not ported |
 | `pulsar` | streaming | Java/Maven | L | expression exists but heavy |
-| `rabbitmq-server` | streaming | Erlang/Mix | L | needs `beamPackages` scope (absent) |
-| `emqx` | streaming | Erlang/Mix | L | needs `beamPackages` scope (absent) |
+| `rabbitmq-server` | streaming | Erlang/Mix | L | needs the `beamPackages` scope — ekala-project/corepkgs#224 |
+| `emqx` | streaming | Erlang/Mix | L | needs the `beamPackages` scope — ekala-project/corepkgs#224 |
 | `hadoop` | batch | Java/Maven | XL | intrinsic |
 | `spark` | batch | Scala/sbt | XL | no sbt toolchain |
 | `m3db` | TSDB | Go | M | no expression in pinned nixpkgs |
