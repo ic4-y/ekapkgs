@@ -85,6 +85,11 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `hbase` | wide-column | Java binary (java.v11) | `hbase version` |
 | `manticore` | search | CMake | indexer builds a 2-doc index |
 | `graphite-web` | TSDB/graphing | Python | builds + `graphite` imports |
+| `rethinkdb` | document | autotools (protobuf.v21) | live server "Server ready" |
+| `solr` | search | Java binary (java.v17) | live server, core, index + query |
+| `accumulo` | wide-column | Java binary (java.v11) | `accumulo-util dump-zoo` vs live ZooKeeper |
+| `m3db` | TSDB | Go (buildGoModule) | live m3dbnode, /health `{"ok":true}` |
+| `cortex` | TSDB | Go (buildGoModule) | live distributor, /ready + push API |
 
 ### Present (pre-existing)
 
