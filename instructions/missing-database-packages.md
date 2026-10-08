@@ -4,7 +4,7 @@ Canonical inventory of database / data-store packages in ekapkgs (plus the
 corepkgs base it overlays): what is present, what was added by this effort, and
 what remains with the exact blocker for each.
 
-Last updated: 2026-10-08 (added rethinkdb, solr, accumulo, m3db, cortex, usearch, keydb)
+Last updated: 2026-10-08 (added rethinkdb, solr, accumulo, m3db, cortex, usearch, keydb, orientdb, hugegraph)
 
 Legend: **effort** S/M/L/XL (build+port cost); **build** = how it compiles.
 `present` rows show where the package lives; `missing` rows show the blocker.
@@ -119,10 +119,8 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `doris` / `starrocks` | OLAP | Java+C++ | XL | intrinsic |
 | `tikv` | KV | Rust | XL | intrinsic |
 | `yugabyte` | RDBMS | C++/CMake | XL | intrinsic |
-| `hugegraph` | graph | Java/Maven | L | not ported |
 | `memgraph` | graph | CMake | L | no expression in pinned nixpkgs |
 | `arangodb` | graph | C++/CMake | XL | intrinsic |
-| `orientdb` | graph | Java | L | not ported |
 | `dragonflydb` | KV | CMake | XL | needs `croncpp`, `flatbuffers_23`, `hnswlib` (absent) |
 | `foundationdb` | KV | CMake | XL | intrinsic (openjdk, mono, boost) |
 | `ceph` | object store | CMake | XL | intrinsic |
@@ -131,8 +129,8 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `redisearch` | search | C module | M | needs module build support |
 | `mssql` / `oracle` / `db2` | RDBMS | proprietary | — | not redistributable |
 
-**Remaining count:** ~29 missing databases (streaming 3, OLAP 5, KV 3,
-graph 4, TSDB 1, wide-column 1, batch 2, object-store 1, plus pgext 3,
+**Remaining count:** ~27 missing databases (streaming 3, OLAP 5, KV 3,
+graph 2, TSDB 1, wide-column 1, batch 2, object-store 1, plus pgext 3,
 vector 1, search 1, and 3 proprietary).
 
 ---
