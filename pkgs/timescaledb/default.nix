@@ -55,7 +55,7 @@ postgresqlBuildExtension (finalAttrs: {
     description = "Time-series database extension for PostgreSQL";
     homepage = "https://www.timescale.com/";
     changelog = "https://github.com/timescale/timescaledb/releases/tag/${finalAttrs.version}";
-    license = if enableUnfree then lib.licenses.tsl11 else lib.licenses.asl20;
+    license = if enableUnfree then lib.licenses.tsl else lib.licenses.asl20;
     platforms = postgresql.meta.platforms;
     broken =
       postgresql != null && lib.versionAtLeast postgresql.version "18" && finalAttrs.version == "2.25.0";
