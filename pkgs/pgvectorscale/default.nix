@@ -17,6 +17,8 @@ buildPgrxExtension (finalAttrs: {
     hash = "sha256-whGTJI73wifYkleC+aAbDV4nhwls3uFs1xKcB0zLDRo=";
   };
 
+  # pgrx's test feature installs the extension into the postgresql store,
+  # which is read-only.
   doCheck = false;
 
   cargoHash = "sha256-uaRKUtsUdZPcrQLAixCiEphXQqdsRhi8nSfh9b3w0ao=";

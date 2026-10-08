@@ -39,7 +39,7 @@ let
       hash = throw "Source for pg_hint_plan is not available for ${postgresql.version}";
     };
 in
-postgresqlBuildExtension (finalAttrs: {
+postgresqlBuildExtension {
   pname = "pg_hint_plan";
   inherit (source) version;
 
@@ -66,4 +66,5 @@ postgresqlBuildExtension (finalAttrs: {
     platforms = postgresql.meta.platforms;
     license = lib.licenses.bsd3;
   };
-})
+
+}
