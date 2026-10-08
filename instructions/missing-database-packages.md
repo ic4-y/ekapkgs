@@ -1,79 +1,165 @@
 # Missing Database Packages
 
-Database / data-store packages added to or still missing from ekapkgs (plus
-the corepkgs base it overlays). Canonical inventory — other DB tables should
-link here rather than duplicate membership.
+Canonical inventory of database / data-store packages in ekapkgs (plus the
+corepkgs base it overlays): what is present, what was added by this effort, and
+what remains with the exact blocker for each.
 
-Last updated: 2026-10-07
+Last updated: 2026-10-08
 
-## Infrastructure added by this effort
+Legend: **effort** S/M/L/XL (build+port cost); **build** = how it compiles.
+`present` rows show where the package lives; `missing` rows show the blocker.
 
-corepkgs' `postgresql` did not expose the `pg_config` attribute that both
-PGXS and pgrx extension builds require, so **no** PostgreSQL extension could be
-built. This PR adds, in `build-support/postgresql/`:
+---
 
-- `pg_config.nix` / `pg_config.sh` — relocatable `pg_config` wrapper, attached
-  to `postgresql.passthru.pg_config`.
-- `postgresqlBuildExtension.nix` — PGXS builder (DESTDIR + nested-store
-  cleanup), exposed top-level as `postgresqlBuildExtension`.
+## 1. PostgreSQL extensions
 
-There is deliberately **no** flat `postgresqlPackages` scope: postgres has one
-version here, and extension attrs are a function of the `postgresql` package.
+### Added by this effort
 
-## Added
+`postgresqlBuildExtension` (from PR #5) makes these plain `pkgs/<name>/default.nix`
+PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 
-| Package | Domain | Build | Notes |
-|---|---|---|---|
-| `postgresqlBuildExtension` | infra | — | PGXS builder |
-| `pg_config` (passthru) | infra | — | unblocks all PG extensions |
-| `pgvector` | vector (PG) | PGXS | `CREATE EXTENSION vector` smoke-tested |
-| `pgmq` | queue (PG) | PGXS | `CREATE EXTENSION pgmq` smoke-tested |
-| `pg_cron` | scheduler (PG) | PGXS | `CREATE EXTENSION pg_cron` smoke-tested |
-| `rum` | FTS index (PG) | PGXS | index smoke-tested |
-| `timescaledb` | time-series (PG) | CMake/PGXS | hypertable smoke-tested |
-| `citus` | distributed (PG) | PGXS | `CREATE EXTENSION citus` smoke-tested |
-| `thanos` | metrics | Go | `--version` |
-| `victorialogs` | logs | Go | `--version` |
-| `immudb` | immutable KV | Go | `version` |
-| `dgraph` | graph | Go | `version` |
-| `weaviate` | vector | Go | `--help` |
-| `qdrant` | vector | Rust | `--version` |
-| `surrealdb` | document-graph | Rust | `version` |
-| `garage` | object store | Rust | `--version` |
-| `neo4j` | graph | Java (binary) | `--version` |
-| `zookeeper` | coordination | Java (binary) | `version` |
-| `couchdb` | document | Erlang | HTTP welcome + create DB smoke-tested |
-
-Python deps added in `python-packages.nix` for the patroni attempt:
-`pysyncobj`, `python-etcd`, `ydiff`.
-
-## Already present (not missing)
-
-`postgresql`, `sqlite`, `sqlcipher`, `mysql80`, `mariadb-galera`, `cockroachdb`,
-`rqlite`, `monetdb`, `redis`, `valkey`, `memcached`, `tarantool`, `etcd`,
-`consul`, `ferretdb`, `pocketbase`, `influxdb`, `prometheus`, `grafana-loki`,
-`tempo`, `mimir`, `meilisearch`, `xapian`, `apache-jena`, `minio`, `seaweedfs`,
-`glusterfs`, `nats-server`, `activemq`, `pgbouncer`, `pgbackrest`, `barman`,
-`leveldb`, `lmdb`, `python3Packages.lancedb`.
-
-## Blocked / deferred (with evidence)
-
-| Package | Blocker | Evidence |
+| Extension | Build | Verified |
 |---|---|---|
-| `patroni` | pre-existing base failure: `python3.13-aiohttp-3.14.3` fails to build (broken python `pkgconfig` setup hook: `export: NIX_@wrapperName@... not a valid identifier`), and `py-consul` depends on it. Its 3 new Python deps (`pysyncobj`, `python-etcd`, `ydiff`) were added and build. | `nix-build python3Packages.aiohttp` fails |
-| `pgvecto-rs` | upstream marks `broken` for PostgreSQL ≥ 17; our postgres is 17.11. Also needs `cargo-pgrx` 0.12-alpha (we have 0.16.1). | nixpkgs `ext/pgvecto-rs/package.nix` `meta.broken` |
-| `vectorchord` | needs `cargo-pgrx` 0.16.0; corepkgs has only `cargo-pgrx` 0.16.1 which does not match. | `pkgs/cargo-pgrx/default.nix:59` |
-| `rabbitmq-server` | needs the `beamPackages` Mix/Rebar scope, absent in corepkgs (`erlang` compiler alone is not enough). | `beamPackages` attr absent |
-| `emqx` | Erlang release built with the same beamPackages/Mix tooling. | absent |
-| `graphite-web` | needs `django-tagging` (absent) plus a heavy Django build. | dep check |
-| `solr` | expression absent in pinned nixpkgs. | `ls-tree` |
-| `spark` | needs Scala/sbt build tooling absent in corepkgs (`scala` compiler exists, but no sbt). | `sbt` attr absent |
-| `clickhouse`, `arangodb`, `scylladb`, `milvus`, `redpanda`, `yugabyte`, `ceph`, `hadoop`, `trino`, `presto`, `elasticsearch`, `opensearch` | intrinsic XL builds; each is a project. | scope decision |
+| `pgvector` | PGXS | CREATE EXTENSION vector + nearest-neighbour query |
+| `pgmq` | PGXS | CREATE EXTENSION pgmq |
+| `pg_cron` | PGXS | CREATE EXTENSION pg_cron |
+| `rum` | PGXS | rum index |
+| `timescaledb` | CMake/PGXS | create_hypertable |
+| `citus` | PGXS | CREATE EXTENSION citus |
+| `pg_partman` | PGXS | CREATE EXTENSION pg_partman |
+| `pgaudit` | PGXS | version-keyed to PG major (17.1) |
+| `pg_repack` | PGXS | CREATE EXTENSION pg_repack |
+| `h3-pg` | CMake/PGXS | CREATE EXTENSION h3 |
+| `pg_ivm` | PGXS | CREATE EXTENSION pg_ivm |
+| `pgjwt` | PGXS | CREATE EXTENSION pgjwt |
+| `pg-semver` | PGXS | CREATE EXTENSION semver |
+| `pg_uuidv7` | PGXS | CREATE EXTENSION pg_uuidv7 |
+| `pg_hint_plan` | PGXS | version-keyed (1.7.1) |
+| `hypopg` | PGXS | CREATE EXTENSION hypopg |
+| `ip4r` | PGXS | CREATE EXTENSION ip4r |
+| `system_stats` | PGXS | CREATE EXTENSION system_stats |
+| `pg_topn` | PGXS | CREATE EXTENSION pg_topn |
+| `pg_safeupdate` | PGXS | version-keyed (1.5) |
+| `pgvectorscale` | pgrx | CREATE EXTENSION vectorscale (pgrx works) |
 
-## Name traps (present but NOT the DB)
+### Extensions still missing
+
+| Extension | Build | Blocker |
+|---|---|---|
+| `pg_graphql` | pgrx | needs `cargo-pgrx` **0.16.0** exactly; corepkgs ships 0.16.1 → `cargo-pgrx and pgrx library versions must be identical` |
+| `pgtap` | PGXS | needs `perlPackages.TAPParserSourceHandlerpgTAP` (absent) + `which` |
+| `patroni` | Python | pre-existing base failure: `python3.13-aiohttp` fails on broken python pkgconfig hook; `py-consul` depends on it |
+| `pgvecto-rs` | pgrx | upstream marks `broken` for PG ≥ 17 (we are 17.11); also needs cargo-pgrx 0.12-alpha |
+| `vectorchord` | pgrx | needs `cargo-pgrx` 0.16.0 (have 0.16.1) |
+| `pg_search` (ParadeDB) | pgrx | no expression in pinned nixpkgs |
+| Other nixpkgs `ext/*` | PGXS | unported but buildable on demand: `age`, `anonymizer`, `apache_datasketches`, `pg_net`, `pg_graphql`, `pgroonga`, `pgrouting`, `postgis`, `wal2json`, `pg_ivm`, etc. |
+
+---
+
+## 2. Standalone servers
+
+### Added by this effort
+
+| Package | Domain | Build | Smoke |
+|---|---|---|---|
+| `victoriametrics` | metrics TSDB | Go | live health OK + REST query |
+| `pyroscope` | continuous profiling | Go | `--version` |
+| `influxdb3` | metrics/analytics | Rust | live serve health OK |
+| `questdb` | time-series SQL | Java binary | `--version` |
+| `opensearch` | search | Java binary | `--version` (live start needs writable logs dir) |
+| `janusgraph` | graph | Java binary | `--version` |
+| `flink` | stream processing | Java binary | `--version` (with writable FLINK_LOG_DIR) |
+| `pgpool` | PG connection pool | autotools | `--version` |
+| `mongodb-ce` | document | binary | live `mongod` start |
+| `druid` | real-time analytics | Java binary | installed |
+| `duckdb` | embeddable OLAP | CMake | live `SELECT` |
+| `faiss` | vector similarity lib | CMake | built |
+
+### Present (pre-existing)
+
+`thanos`, `victorialogs`, `immudb`, `dgraph`, `weaviate`, `qdrant`, `surrealdb`,
+`garage`, `neo4j`, `zookeeper`, `couchdb`, `postgresql`, `sqlite`, `sqlcipher`,
+`mysql80`, `mariadb-galera`, `cockroachdb`, `rqlite`, `monetdb`, `redis`,
+`valkey`, `memcached`, `tarantool`, `etcd`, `consul`, `ferretdb`, `pocketbase`,
+`influxdb`, `prometheus`, `grafana-loki`, `tempo`, `mimir`, `meilisearch`,
+`xapian`, `apache-jena`, `minio`, `seaweedfs`, `glusterfs`, `nats-server`,
+`activemq`, `pgbouncer`, `pgbackrest`, `barman`, `leveldb`, `lmdb`,
+`python3Packages.lancedb`.
+
+### Still missing
+
+| Package | Category | Build | Effort | Blocker |
+|---|---|---|---|---|
+| `hbase` | wide-column | Java/Maven | M | not ported (expression in nixpkgs `servers/hbase`) |
+| `accumulo` | wide-column | Java/Maven | M | not ported |
+| `cassandra` | wide-column | Java/Gradle | L | not ported |
+| `scylladb` | wide-column | seastar C++ | XL | intrinsic; seastar toolchain |
+| `solr` | search | Java binary | M | no expression in pinned nixpkgs |
+| `manticore` | search | CMake | L | not ported |
+| `kafka` | streaming | Java/Gradle | L | no by-name expression (library hits only) |
+| `pulsar` | streaming | Java/Maven | L | expression exists but heavy |
+| `rabbitmq-server` | streaming | Erlang/Mix | L | needs `beamPackages` scope (absent) |
+| `emqx` | streaming | Erlang/Mix | L | needs `beamPackages` scope (absent) |
+| `hadoop` | batch | Java/Maven | XL | intrinsic |
+| `spark` | batch | Scala/sbt | XL | no sbt toolchain |
+| `m3db` | TSDB | Go | M | no expression in pinned nixpkgs |
+| `cortex` | TSDB | Go | L | no expression in pinned nixpkgs |
+| `graphite-web` | TSDB/graphing | Python | M | needs `django-tagging` (absent) |
+| `opentsdb` | TSDB | Java | L | expression exists but heavy (jdk8, maven artifacts) |
+| `clickhouse` | OLAP | C++/CMake | XL | intrinsic (huge monorepo) |
+| `pinot` | OLAP | Java/Maven | XL | intrinsic |
+| `trino` | OLAP | Java/Maven | XL | intrinsic |
+| `presto` | OLAP | Java/Maven | XL | intrinsic |
+| `doris` / `starrocks` | OLAP | Java+C++ | XL | intrinsic |
+| `tidb` | RDBMS | Go | M | expression exists; deps heavy |
+| `tikv` | KV | Rust | XL | intrinsic |
+| `firebird` | RDBMS | CMake | L | expression exists |
+| `yugabyte` | RDBMS | C++/CMake | XL | intrinsic |
+| `rethinkdb` | document | C++ | L | no server expression (python module only) |
+| `hugegraph` | graph | Java/Maven | L | not ported |
+| `memgraph` | graph | CMake | L | no expression in pinned nixpkgs |
+| `arangodb` | graph | C++/CMake | XL | intrinsic |
+| `orientdb` | graph | Java | L | not ported |
+| `keydb` | KV | make | M | no expression in pinned nixpkgs |
+| `dragonflydb` | KV | CMake | XL | needs `croncpp`, `flatbuffers_23`, `hnswlib` (absent) |
+| `foundationdb` | KV | CMake | XL | intrinsic (openjdk, mono, boost) |
+| `ceph` | object store | CMake | XL | intrinsic |
+| `pgvecto-rs`, `vectorchord`, `pg_search` | vector (PG) | pgrx | — | see §1 |
+| `usearch` | vector | C++ header | S | not ported |
+| `typesense` | vector/search | binary | M | expression exists (needs `sources.json`) |
+| `milvus` | vector | Go+C++ | XL | intrinsic |
+| `chromadb` | vector | Rust/Python | L | not ported |
+| `valkey-search` | vector | Rust module | M | needs module build support |
+| `redisearch` | search | C module | M | needs module build support |
+| `mssql` / `oracle` / `db2` | RDBMS | proprietary | — | not redistributable |
+
+**Remaining count:** ~47 missing across these categories (vector 9, graph 4,
+wide-column 4, streaming 6, OLAP 6, TSDB 4, RDBMS 4, search 2, KV 3, plus
+pgext 3, document 1, object-store 1).
+
+---
+
+## 3. Build infrastructure notes
+
+- **corepkgs cmake hook**: the `cmake` setup-hook defines `cmakeConfigurePhase`
+  but never assigns it to `configurePhase`; packages must add
+  `cmake.configurePhaseHook` to `nativeBuildInputs`. Needed by `timescaledb`,
+  `duckdb`, `faiss`, `h3-pg`. (nixpkgs assigns it automatically.)
+- **`pg_config` passthru + `postgresqlBuildExtension`** live in
+  `build-support/postgresql/` and are wired via `top-level.nix`. `postgresql` is
+  single-version (17.11); no `postgresqlPackages` scope yet.
+- **cargo-pgrx 0.16.1** is the only pgrx version present; packages pinned to a
+  different exact cargo-pgrx (pg_graphql 0.16.0) cannot build.
+
+## 4. Name traps (present but NOT the DB)
 
 - `pkgs/chroma` — syntax highlighter (`alecthomas/chroma`), not ChromaDB.
 - `pkgs/loki` — C++ design-pattern library (use `grafana-loki`).
 - `pkgs/drill` — HTTP load tester, not Apache Drill.
 - `pkgs/chromaprint` — audio fingerprinting.
+- `pkgs/nebula` — **absent**; `by-name/ne/nebula` in nixpkgs is Slack's overlay
+  VPN, NOT the graph database.
+- `python3Packages.dragonfly` — Python library, NOT DragonflyDB (use `dragonflydb`).
 - `python3Packages.sphinx` — docs generator, not Sphinx Search.
+- nixpkgs `kafka`/`mongodb`/`elasticsearch` by-name hits are language bindings,
+  not servers; use `mongodb-ce` for MongoDB.
