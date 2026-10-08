@@ -38,7 +38,7 @@ postgresqlBuildExtension (finalAttrs: {
 
   meta = {
     description = "PostgreSQL bindings for H3, a hierarchical hexagonal geospatial indexing system";
-    homepage = "https://github.com/zachasme/h3-pg";
+    homepage = "https://github.com/postgis/h3-pg";
     license = lib.licenses.asl20;
     platforms = postgresql.meta.platforms;
   };
