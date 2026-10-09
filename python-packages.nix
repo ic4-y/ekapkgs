@@ -191,4 +191,327 @@ final: prev: {
     };
   };
 
+  # pysyncobj: replication library required by patroni. Upstream nixpkgs.
+  pysyncobj = final.buildPythonPackage rec {
+    pname = "pysyncobj";
+    version = "0.3.14";
+    pyproject = true;
+
+    src = final.pkgs.fetchFromGitHub {
+      owner = "bakwc";
+      repo = "PySyncObj";
+      tag = "v${version}";
+      hash = "sha256-a1fECsLIEFu9Wwai0viR/lkqWVWBKs+OdxHey3Pltmo=";
+    };
+
+    build-system = [ final.setuptools ];
+
+    # Tests require network features
+    doCheck = false;
+
+    pythonImportsCheck = [ "pysyncobj" ];
+
+    meta = {
+      description = "Python library for replicating your class";
+      homepage = "https://github.com/bakwc/PySyncObj";
+      changelog = "https://github.com/bakwc/PySyncObj/releases/tag/v${version}";
+      license = final.pkgs.lib.licenses.mit;
+      mainProgram = "syncobj_admin";
+    };
+  };
+
+  # python-etcd: required by patroni. Upstream nixpkgs.
+  python-etcd = final.buildPythonPackage {
+    pname = "python-etcd";
+    version = "0.5.0-unstable-2023-10-31";
+    pyproject = true;
+
+    src = final.pkgs.fetchFromGitHub {
+      owner = "jplana";
+      repo = "python-etcd";
+      rev = "5aea0fd4461bd05dd96e4ad637f6be7bceb1cee5";
+      hash = "sha256-eVirStLOPTbf860jfkNMWtGf+r0VygLZRjRDjBMCVKg=";
+    };
+
+    build-system = [ final.setuptools ];
+
+    dependencies = [
+      final.urllib3
+      final.dnspython
+    ];
+
+    # Upstream's test suite needs a running etcd instance (etcd_3_4, absent
+    # from this package set) and patches to its own test files.
+    doCheck = false;
+
+    meta = {
+      description = "Python client for Etcd";
+      homepage = "https://github.com/jplana/python-etcd";
+      license = final.pkgs.lib.licenses.mit;
+    };
+  };
+
+  # ydiff: required by patroni (optional side-by-side diff). Upstream nixpkgs,
+  # minus the VCS-path substitutions, which would force heavy subversion/p4
+  # builds at package-build time; ydiff resolves its VCS tools from PATH at
+  # runtime instead.
+  ydiff = final.buildPythonPackage rec {
+    pname = "ydiff";
+    version = "1.5";
+    format = "setuptools";
+
+    src = final.pkgs.fetchFromGitHub {
+      owner = "ymattw";
+      repo = "ydiff";
+      tag = version;
+      hash = "sha256-9a7M6+CqGRvO1yainImN2RQVH3XMxE9PTLXJGKekXLg=";
+    };
+
+    patchPhase = ''
+      patchShebangs setup.py
+    '';
+
+    # Upstream's check runs `make reg`, which needs the full VCS toolchain.
+    doCheck = false;
+
+    meta = {
+      description = "View colored, incremental diff in workspace or from stdin";
+      mainProgram = "ydiff";
+      homepage = "https://github.com/ymattw/ydiff";
+      license = final.pkgs.lib.licenses.bsd3;
+    };
+  };
+
+  # django-tagging: generic tagging app for Django, needed by graphite-web.
+  django-tagging = final.buildPythonPackage rec {
+    pname = "django-tagging";
+    version = "0.5.0";
+    format = "setuptools";
+
+    src = final.pkgs.fetchPypi {
+      inherit pname version;
+      sha256 = "28d68fa4831705e51ad7d1e845ed6dd9e354f9b6f8a5f63b655a430646ef4e8d";
+    };
+
+    # error: invalid command 'test'
+    doCheck = false;
+
+    propagatedBuildInputs = [ final.django ];
+
+    meta = {
+      description = "Generic tagging application for Django projects";
+      homepage = "https://github.com/Fantomas42/django-tagging";
+    };
+  };
+
+  # graphite-web: enterprise scalable realtime graphing.
+  graphite-web = final.buildPythonPackage (finalAttrs: {
+    pname = "graphite-web";
+    version = "1.1.10-unstable-2025-02-24";
+    format = "setuptools";
+
+    src = final.pkgs.fetchFromGitHub {
+      owner = "graphite-project";
+      repo = "graphite-web";
+      rev = "49c28e2015d605ad9ec93524f7076dd924a4731a";
+      hash = "sha256-TxsQPhnI5WhQvKKkDEYZ8xnyg/qf+N9Icej6d6A0jC0=";
+    };
+
+    postPatch = ''
+      substituteInPlace webapp/graphite/settings.py \
+        --replace-fail \
+          "join(WEBAPP_DIR, 'content')" \
+          "join('$out/webapp', 'content')"
+    '';
+
+    dependencies = with final; [
+      cairocffi
+      django
+      django-tagging
+      gunicorn
+      pyparsing
+      python-memcached
+      pytz
+      six
+      txamqp
+      urllib3
+      whisper
+    ];
+
+    pythonRelaxDeps = [
+      "django"
+      "django-tagging"
+    ];
+
+    env = {
+      GRAPHITE_NO_PREFIX = "True";
+      REDIS_HOST = "127.0.0.1";
+    };
+
+    pythonImportsCheck = [ "graphite" ];
+
+    # Tests need a running redis (valkey) and a full django test harness.
+    doCheck = false;
+
+    meta = {
+      description = "Enterprise scalable realtime graphing";
+      homepage = "http://graphiteapp.org/";
+      license = final.pkgs.lib.licenses.asl20;
+    };
+  });
+
+  # onnxruntime Python wheel, built from the top-level onnxruntime's `dist`
+  # output (the python-pkgs scope has no onnxruntime of its own). Needed by
+  # chromadb's default embedding function.
+  onnxruntime = final.buildPythonPackage {
+    inherit (final.pkgs.onnxruntime) pname version;
+    format = "wheel";
+    src = final.pkgs.onnxruntime.dist;
+
+    unpackPhase = ''
+      cp -r $src dist
+      chmod +w dist
+    '';
+
+    nativeBuildInputs = [ final.pkgs.autoPatchelfHook ];
+
+    pythonRemoveDeps = [
+      "flatbuffers"
+      "protobuf"
+      "sympy"
+    ];
+
+    buildInputs = [
+      final.pkgs.oneDNN
+      final.pkgs.re2
+      final.pkgs.onnxruntime.protobuf
+      final.pkgs.onnxruntime
+    ];
+
+    dependencies = with final; [
+      coloredlogs
+      numpy
+      packaging
+    ];
+
+    pythonImportsCheck = [ "onnxruntime" ];
+
+    meta = final.pkgs.onnxruntime.meta;
+  };
+
+  # chromadb: AI-native embedding database. Upstream buildPythonPackage with
+  # onnxruntime pulled from the top-level (the python scope lacks it) and the
+  # `zstd-c` alias replaced by the plain zstd package.
+  chromadb = final.buildPythonPackage (finalAttrs: {
+    pname = "chromadb";
+    version = "1.4.1";
+    pyproject = true;
+
+    src = final.pkgs.fetchFromGitHub {
+      owner = "chroma-core";
+      repo = "chroma";
+      tag = finalAttrs.version;
+      hash = "sha256-mtUxyuLiwA4l9u+pTPVIsYcvsLPPCI6c8iWK6Lgbwjc=";
+    };
+
+    cargoDeps = final.pkgs.rustPlatform.fetchCargoVendor {
+      inherit (finalAttrs) pname version src;
+      hash = "sha256-WdWc/8vNzcEtdxmAAbBDWxhMamxSnK2YaZPWwQ2zzU4=";
+    };
+
+    # Can't use fetchFromGitHub as the build expects a zipfile
+    swagger-ui = final.pkgs.fetchurl {
+      url = "https://github.com/swagger-api/swagger-ui/archive/refs/tags/v5.22.0.zip";
+      hash = "sha256-H+kXxA/6rKzYA19v7Zlx2HbIg/DGicD5FDIs0noVGSk=";
+    };
+
+    postPatch = ''
+      substituteInPlace pyproject.toml \
+        --replace-fail "dynamic = [\"version\"]" "version = \"${finalAttrs.version}\""
+      substituteInPlace chromadb/config.py \
+        --replace-fail "anonymized_telemetry: bool = True" \
+                       "anonymized_telemetry: bool = False"
+
+      # Newer rustc (1.98) counts async-fn type layout depth more strictly;
+      # several chroma crates overflow the default recursion limit. Raise it
+      # for every crate. The attribute must be the first line of each lib.rs.
+      for lib in rust/*/src/lib.rs; do
+        sed -i '1i #![recursion_limit = "512"]' "$lib"
+      done
+    '';
+
+    pythonRelaxDeps = [
+      "fastapi"
+      "posthog"
+    ];
+
+    build-system = [ final.pkgs.rustPlatform.maturinBuildHook ];
+
+    nativeBuildInputs = [
+      final.pkgs.cargo
+      final.pkgs.cmake
+      final.pkgs.pkg-config
+      final.pkgs.protobuf
+      final.pkgs.rustc
+      final.pkgs.rustPlatform.cargoSetupHook
+    ];
+
+    buildInputs = [
+      final.pkgs.openssl
+      final.pkgs.zstd
+    ];
+
+    dependencies = [
+      final.onnxruntime
+    ]
+    ++ (with final; [
+      bcrypt
+      build
+      fastapi
+      grpcio
+      httpx
+      importlib-resources
+      jsonschema
+      kubernetes
+      mmh3
+      numpy
+      opentelemetry-api
+      opentelemetry-exporter-otlp-proto-grpc
+      opentelemetry-instrumentation-fastapi
+      opentelemetry-sdk
+      orjson
+      overrides
+      posthog
+      pybase64
+      pydantic
+      pypika
+      pyyaml
+      requests
+      tenacity
+      tokenizers
+      tqdm
+      typer
+      typing-extensions
+      uvicorn
+    ]);
+
+    pythonImportsCheck = [ "chromadb" ];
+
+    # Tests need network access and a running server, and the full harness
+    # (hypothesis, pytest-xdist) is not available in the python scope.
+    doCheck = false;
+
+    env = {
+      ZSTD_SYS_USE_PKG_CONFIG = true;
+      SWAGGER_UI_DOWNLOAD_URL = "file://${finalAttrs.swagger-ui}";
+    };
+
+    meta = {
+      description = "AI-native open-source embedding database";
+      homepage = "https://github.com/chroma-core/chroma";
+      license = final.pkgs.lib.licenses.asl20;
+      mainProgram = "chroma";
+    };
+  });
+
 }

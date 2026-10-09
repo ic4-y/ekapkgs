@@ -5,6 +5,7 @@ final: prev: {
       inherit (final) lib writeTextFile buildPackages;
     }
   );
+  fetchMavenArtifact = final.callPackage ./build-support/fetchmavenartifact/default.nix { };
   jre = final.java;
   qt5Packages = final.qt5;
   libsForQt5 = final.qt5;
@@ -25,6 +26,8 @@ final: prev: {
   clippy = final.rust.packages.stable.clippy;
   rustfmt = final.rust.packages.stable.rustfmt;
   rustc = final.rust.packages.stable.rustc;
+  # nixpkgs attr parity: the unprefixed jemalloc variant used by some Rust crates.
+  rust-jemalloc-sys-unprefixed = final.rust-jemalloc-sys.override { unprefixed = true; };
   # Fix zeromq: disable doc generation (asciidoc binary not available)
   # TODO: remove once corepkgs zeromq fix is upstream
   zeromq = prev.zeromq.overrideAttrs (old: {
@@ -71,12 +74,60 @@ final: prev: {
   # stub for packages that reference nixosTests
   nixosTests = { };
 
+  # PostgreSQL extension support.
+  # corepkgs' postgresql does not expose the `pg_config` attr that PGXS and
+  # pgrx extension builds require. Reconstruct it from the derivation's own
+  # dev-output `nix-support/pg_config.env`, attach it to `postgresql.passthru`,
+  # and expose the PGXS builder used by extension packages in pkgs/.
+  postgresql = prev.postgresql.overrideAttrs (old: {
+    passthru = (old.passthru or { }) // {
+      pg_config = final.callPackage ./build-support/postgresql/pg_config.nix {
+        postgresql = final.postgresql;
+        # Only the placeholders actually present in the packaged pg_config.env.
+        # Do NOT derive this from postgresql.outputs: replaceVarsWith fails
+        # loudly on a replacement that matches nothing (e.g. `debug`).
+        outputs = {
+          out = final.lib.getOutput "out" final.postgresql;
+          man = final.lib.getOutput "man" final.postgresql;
+        };
+      };
+    };
+  });
+  postgresqlBuildExtension =
+    final.callPackage ./build-support/postgresql/postgresqlBuildExtension.nix
+      { };
+
+  # corepkgs dropped the LLVM <20 compiler-rt patch (llvm/llvm-project@59978b2)
+  # that fixes the `__sanitizer::termio` type against glibc 2.42. Without it,
+  # compiler-rt-libc (and therefore llvmPackages_19.stdenv, used to build
+  # ClickHouse) fails to compile. Re-apply the upstream patch.
+  llvmPackages_19 = prev.llvmPackages_19.overrideScope (
+    lfinal: lprev: {
+      compiler-rt-libc = lprev.compiler-rt-libc.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [
+          (final.fetchpatch {
+            url = "https://github.com/llvm/llvm-project/commit/59978b21ad9c65276ee8e14f26759691b8a65763.patch";
+            hash = "sha256-ys5SMLfO3Ay9nCX9GV5yRCQ6pLsseFu/ZY6Xd6OL4p0=";
+            relative = "compiler-rt";
+          })
+        ];
+      });
+    }
+  );
+
   # Fix duktape: ensure libm is linked into the shared library.
   # LDFLAGS=-lm is placed before the source file by Makefile.sharedlibrary,
   # so the linker drops it. Append -lm via NIX_LDFLAGS to fix IFUNC resolution
   # failures with glibc 2.42 (e.g. qmlcachegen crash during qtdeclarative build).
   duktape = prev.duktape.overrideAttrs (old: {
     NIX_LDFLAGS = (old.NIX_LDFLAGS or "") + " -lm";
+  });
+
+  # croaring's CMake config requires cmocka >= 2.0.0, but corepkgs ships 1.1.8,
+  # so the configure step fails even though cmocka is test-only. Disable the
+  # test build (manticore depends on croaring).
+  croaring = prev.croaring.overrideAttrs (old: {
+    cmakeFlags = (old.cmakeFlags or [ ]) ++ [ "-DENABLE_ROARING_TESTS=OFF" ];
   });
 
   # Break qt6 <-> doxygen cycle: doxygen optionally depends on qt6,
