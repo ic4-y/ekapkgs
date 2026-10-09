@@ -4,7 +4,7 @@ Canonical inventory of database / data-store packages in ekapkgs (plus the
 corepkgs base it overlays): what is present, what was added by this effort, and
 what remains with the exact blocker for each.
 
-Last updated: 2026-10-09 (corepkgs pin bumped for beamPackages; +17 more PG extensions)
+Last updated: 2026-10-09 (PR #5: 130 commits; 48 PG extensions + 44 standalone stores + 6 infra/deps; corepkgs pin bumped for beamPackages; khepri added)
 
 Legend: **effort** S/M/L/XL (build+port cost); **build** = how it compiles.
 `present` rows show where the package lives; `missing` rows show the blocker.
@@ -128,6 +128,12 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `accumulo` | wide-column | Java binary (java.v11) | `accumulo-util dump-zoo` vs live ZooKeeper |
 | `m3db` | TSDB | Go (buildGoModule) | live m3dbnode, /health `{"ok":true}` |
 | `cortex` | TSDB | Go (buildGoModule) | live distributor, /ready + push API |
+| `usearch` | vector | C++/CMake (header-only + C lib) | upstream C test suite passes |
+| `keydb` | KV | autotools (bundled deps) | live server PING + SET/GET round-trip |
+| `orientdb-community` | graph/document | Maven (maven.buildMavenPackage) | live server, DB + record insert/query |
+| `hugegraph-server` | graph | Maven (maven.buildMavenPackage, jdk11) | live REST API, vertex add/list |
+| `opentsdb` | TSDB | autotools+Maven (jdk8) | full source build incl. GWT; `tsdb version` + CLI |
+| `khepri` | KV (Erlang/Raft) | rebar3 (beamPackages) | live: put/read a tree path |
 
 ### Present (pre-existing)
 
@@ -148,6 +154,9 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `pulsar` | streaming | Java/Maven | L | expression exists but heavy |
 | `rabbitmq-server` | streaming | Erlang/Mix | L | `beamPackages` now in scope (corepkgs#225 merged, pin bumped), but the Elixir-based CLI build hits a corepkgs bug: the default scope pairs Erlang OTP 27 with an Elixir built for OTP 28 — ekala-project/corepkgs#227 |
 | `emqx` | streaming | Erlang/Mix | L | `beamPackages` now in scope; Mix/rebar3 build with a large vendored dep set — not yet attempted |
+| `riak` | KV (Erlang) | rebar3 release | L | not in nixpkgs; rebar3 deps fetched from git branches (cluster_info, riak_kv, riak_repl) — needs a source port |
+| `mnesia` | KV/RDBMS (Erlang/OTP) | OTP application (in-tree) | S | ships inside Erlang; needs a wrapper exposing the app + a launcher (attempted, disc-table smoke not yet passing) |
+| `couchbase` | document/KV | Erlang + C++/CMake | XL | ns_server is Erlang + heavy C++ (KV, indexing) and Go (query); no nixpkgs expression |
 | `hadoop` | batch | Java/Maven | XL | intrinsic |
 | `spark` | batch | Scala/sbt | XL | no sbt toolchain |
 | `pinot` | OLAP | Java/Maven | XL | intrinsic |
@@ -166,9 +175,9 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `redisearch` | search | C module | M | needs module build support |
 | `mssql` / `oracle` / `db2` | RDBMS | proprietary | — | not redistributable |
 
-**Remaining count:** ~26 missing databases (streaming 3, OLAP 5, KV 3,
-graph 2, wide-column 1, batch 2, object-store 1, plus pgext 20,
-vector 1, search 1, and 3 proprietary).
+**Remaining:** **29** missing standalone databases (rows above; 3 are
+proprietary and 3 are the pgrx PG vector/search trio, counted in §1) plus
+**14** further blocked PG extensions in §1.
 
 ---
 
@@ -206,6 +215,14 @@ vector 1, search 1, and 3 proprietary).
 - **`postgresql` has no `withPackages`**: PG extensions are installed as
   standalone derivations and must be composed onto the server tree by the
   service layer (as the verification harness does).
+- **`fetchMavenArtifact`** is provided by this repo
+  (`build-support/fetchmavenartifact/`, wired in `top-level.nix`); corepkgs has
+  no equivalent. Used by `opentsdb`.
+- **Erlang/beam packages** are built with `beamPackages.buildRebar3`
+  (`khepri`), with hex deps built via `buildRebar3` + `fetchHex` and no
+  `rebar3_nix`-generated file (hex deps are declared inline). A matched
+  Erlang/Elixir pair must be selected explicitly (`erlang.v28.beamPackages`);
+  the default scope is mismatched (corepkgs#227).
 
 ## 4. Name traps (present but NOT the DB)
 
