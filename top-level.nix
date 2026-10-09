@@ -5,6 +5,7 @@ final: prev: {
       inherit (final) lib writeTextFile buildPackages;
     }
   );
+  fetchMavenArtifact = final.callPackage ./build-support/fetchmavenartifact/default.nix { };
   jre = final.java;
   qt5Packages = final.qt5;
   libsForQt5 = final.qt5;
