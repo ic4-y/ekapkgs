@@ -4,7 +4,7 @@ Canonical inventory of database / data-store packages in ekapkgs (plus the
 corepkgs base it overlays): what is present, what was added by this effort, and
 what remains with the exact blocker for each.
 
-Last updated: 2026-10-08 (added rethinkdb, solr, accumulo, m3db, cortex, usearch, keydb, orientdb, hugegraph, opentsdb, +11 PG extensions)
+Last updated: 2026-10-09 (corepkgs pin bumped for beamPackages; +17 more PG extensions)
 
 Legend: **effort** S/M/L/XL (build+port cost); **build** = how it compiles.
 `present` rows show where the package lives; `missing` rows show the blocker.
@@ -52,6 +52,23 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `pg_squeeze` | PGXS | CREATE EXTENSION pg_squeeze (shared_preload_libraries) |
 | `pg_csv` | PGXS | CREATE EXTENSION pg_csv |
 | `pg_rational` | PGXS | SELECT '7/3'::rational = 7/3 |
+| `jsonb_deep_sum` | PGXS | CREATE EXTENSION jsonb_deep_sum |
+| `periods` | PGXS | CREATE EXTENSION periods |
+| `pg_relusage` | PGXS | CREATE EXTENSION pg_relusage |
+| `pg_libversion` | PGXS | CREATE EXTENSION libversion |
+| `pg_tle` | PGXS | CREATE EXTENSION pg_tle (shared_preload_libraries) |
+| `pgsql-http` | PGXS (curl) | CREATE EXTENSION http |
+| `sqlite_fdw` | PGXS (sqlite) | CREATE EXTENSION sqlite_fdw |
+| `tds_fdw` | PGXS (freetds) | CREATE EXTENSION tds_fdw |
+| `pg_similarity` | PGXS | CREATE EXTENSION pg_similarity |
+| `repmgr` | PGXS (flex/json-c) | CREATE EXTENSION repmgr |
+| `pg_auto_failover` | PGXS | CREATE EXTENSION pgautofailover |
+| `pgsodium` | PGXS (libsodium) | CREATE EXTENSION pgsodium + version() |
+| `pg_background` | PGXS | CREATE EXTENSION pg_background |
+| `pg_byteamagic` | PGXS (file) | CREATE EXTENSION byteamagic |
+| `pgddl` | PGXS (perl) | CREATE EXTENSION ddlx |
+| `apache_datasketches` | PGXS (boost) | CREATE EXTENSION datasketches |
+| `postgresql-lantern` | CMake (openssl) | CREATE EXTENSION lantern |
 
 ### Extensions still missing
 
@@ -63,8 +80,17 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `pgvecto-rs` | pgrx | upstream marks `broken` for PG ≥ 17 (we are 17.11); also needs cargo-pgrx 0.12-alpha |
 | `vectorchord` | pgrx | needs `cargo-pgrx` 0.16.0 (have 0.16.1) |
 | `pg_search` (ParadeDB) | pgrx | no expression in pinned nixpkgs |
+| `anonymizer` | pgrx | needs `pg-dump-anon` (absent) |
 | `pgrouting` | PGXS/CMake | hard-requires the `postgis` extension, whose build needs `gdal` (absent from corepkgs) |
-| Other nixpkgs `ext/*` | PGXS | unported but buildable on demand: `anonymizer`, `apache_datasketches`, `apache_datasketches`, `pgroonga`, `pg_auto_failover`, `repmgr`, `smlar` (PG<16), `postgis`, etc. |
+| `postgis` | PGXS/CMake | needs `gdal`/`gdalMinimal` (absent from corepkgs) |
+| `pg-gvm` | CMake | needs `gvm-libs` (present, but no expression in pinned nixpkgs) |
+| `pgroonga` | PGXS | needs `groonga` (absent from corepkgs) |
+| `smlar` | PGXS | upstream marks `broken` for PG ≥ 16 (we are 17) |
+| `cstore_fdw` | PGXS | upstream marks `broken` for PG ≥ 14 (we are 17) |
+| `pg_ed25519` | PGXS | upstream marks `broken` for PG ≥ 16 (we are 17) |
+| `timescaledb_toolkit` | pgrx | needs `cargo-pgrx_0_12_6` (present) but the pgrx build is unverified |
+| `omnigres` | PGXS/CMake | needs `clang_18` + python; large, unported |
+| `plperl`/`plpython3`/`pltcl`/`plr` | PGXS | procedural language handlers; require postgresql.withPackages support (absent) |
 
 ---
 
@@ -120,8 +146,8 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 |---|---|---|---|---|
 | `scylladb` | wide-column | seastar C++ | XL | intrinsic; seastar toolchain |
 | `pulsar` | streaming | Java/Maven | L | expression exists but heavy |
-| `rabbitmq-server` | streaming | Erlang/Mix | L | needs the `beamPackages` scope — ekala-project/corepkgs#224 |
-| `emqx` | streaming | Erlang/Mix | L | needs the `beamPackages` scope — ekala-project/corepkgs#224 |
+| `rabbitmq-server` | streaming | Erlang/Mix | L | `beamPackages` now in scope (corepkgs#225 merged, pin bumped), but the Elixir-based CLI build hits a corepkgs bug: the default scope pairs Erlang OTP 27 with an Elixir built for OTP 28 — ekala-project/corepkgs#227 |
+| `emqx` | streaming | Erlang/Mix | L | `beamPackages` now in scope; Mix/rebar3 build with a large vendored dep set — not yet attempted |
 | `hadoop` | batch | Java/Maven | XL | intrinsic |
 | `spark` | batch | Scala/sbt | XL | no sbt toolchain |
 | `pinot` | OLAP | Java/Maven | XL | intrinsic |
@@ -141,7 +167,7 @@ PGXS/pgrx ports. Each was verified with a live `CREATE EXTENSION`.
 | `mssql` / `oracle` / `db2` | RDBMS | proprietary | — | not redistributable |
 
 **Remaining count:** ~26 missing databases (streaming 3, OLAP 5, KV 3,
-graph 2, wide-column 1, batch 2, object-store 1, plus pgext 3,
+graph 2, wide-column 1, batch 2, object-store 1, plus pgext 20,
 vector 1, search 1, and 3 proprietary).
 
 ---
@@ -171,6 +197,15 @@ vector 1, search 1, and 3 proprietary).
   are packaged from their upstream binary tarballs instead.
 - **`jdk8`** is provided by this repo (`pkgs/jdk8`) since corepkgs' `java` scope
   starts at 11. Needed by Java-8-era toolchains (GWT 2.6.1 in `opentsdb`).
+- **`beamPackages`** is now in scope after bumping the corepkgs pin to
+  `433e1ddb` (corepkgs#225). `buildMix` works for ordinary Mix projects.
+  However the *default* scope pairs Erlang OTP 27 with an Elixir built for
+  OTP 28, so Elixir `.beam` files fail to load (`{undef,[{elixir,start,...}]}`);
+  use `erlang.v28.beamPackages` for a matched pair. Tracked in
+  ekala-project/corepkgs#227.
+- **`postgresql` has no `withPackages`**: PG extensions are installed as
+  standalone derivations and must be composed onto the server tree by the
+  service layer (as the verification harness does).
 
 ## 4. Name traps (present but NOT the DB)
 
