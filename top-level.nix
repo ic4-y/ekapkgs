@@ -9,6 +9,26 @@ final: prev: {
   # openal is an alias for openal-soft
   openal = final.openal-soft;
 
+  # PostgreSQL extensions, exposed as `postgresqlPackages.*`. Expressions live in
+  # `postgresql/pkgs/` (not `pkgs/`, so names like `age` don't shadow top-level packages).
+  postgresqlPackages =
+    let
+      postgresqlPackages = final.makeScopeWithSplicing' {
+        otherSplices = final.generateSplicesForMkScope "postgresqlPackages";
+        f =
+          finalPostgresqlPackages:
+          {
+            inherit (final) postgresql;
+            postgresqlBuildExtension = final.postgresql.buildExtension;
+          }
+          // final.lib.packagesFromDirectoryRecursive {
+            inherit (finalPostgresqlPackages) callPackage;
+            directory = ./postgresql/pkgs;
+          };
+      };
+    in
+    final.lib.recurseIntoAttrs postgresqlPackages;
+
   # Rust infrastructure aliases
   rustPlatform = final.rust.packages.stable.rustPlatform;
 
