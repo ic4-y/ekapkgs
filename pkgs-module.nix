@@ -67,6 +67,10 @@ in
     perlOverrides
   ];
 
+  overlays.postgresql = [
+    (lib.packageSets.mkAutoCalledPackageDir ./postgresql/pkgs)
+  ];
+
   overlays.haskell = [
     haskellFixes
   ];
