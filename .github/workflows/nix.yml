@@ -35,3 +35,20 @@ jobs:
     - name: Evaluate all packages
       run: ./ci/eval.sh
 
+  package-test:
+
+    # Runs the open-code-review review-scope canary: a repository-root pkgs/
+    # must stay inside the tool's review set, or every Nix package source is
+    # dropped before the model sees it.
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: cachix/install-nix-action@v30
+      with:
+        extra_nix_config: |
+          extra-substituters = https://ekala-corepkgs.cachix.org
+          extra-trusted-public-keys = ekala-corepkgs.cachix.org-1:DcZV+vegWoEzacbSdXFXU4S7728C0eS9RfGpKeyHd6w=
+    - name: open-code-review review scope
+      run: nix build .#legacyPackages.x86_64-linux.open-code-review.tests.reviewScope
+
