@@ -37,9 +37,9 @@ jobs:
 
   package-test:
 
-    # Runs the open-code-review review-scope canary: a repository-root pkgs/
-    # must stay inside the tool's review set, or every Nix package source is
-    # dropped before the model sees it.
+    # Runs the open-code-review review-scope canary (pkgs/open-code-review/test.nix):
+    # a repository-root pkgs/ must stay inside the tool's review set, or every
+    # Nix package source is dropped before the model sees it.
     runs-on: ubuntu-latest
 
     steps:
