@@ -38,9 +38,10 @@ else
 fi
 
 # ── 2. Representative reviewable paths resolve to the project rule ──────────
-# Note: root pkgs/ is a provider directory and is never reviewed; it is covered
-# by its own assertion below. These are the paths a review actually sees.
+# These are the paths a review actually sees. Root pkgs/ is reviewable too —
+# its review scope is pinned by open-code-review.tests.reviewScope, not here.
 for path in \
+  pkgs/foo/default.nix \
   python/pkgs/requests/default.nix \
   perl/pkgs/foo/default.nix \
   writers/pkgs/bar/default.nix \
@@ -153,25 +154,6 @@ if [ "$first" = "1" ] && (cd "$scratch" && "$OCR" rules check foo.nix 2>&1 | gre
   pass "sibling entries resolve first-match-wins"
 else
   fail "sibling entries did not resolve first-match-wins"
-fi
-
-# ── 6. Documented limitation: root pkgs/ is a provider directory ────────────
-lim="$(mktemp -d)"
-trap 'rm -rf "$scratch" "$lim"' EXIT
-mkdir -p "$lim/pkgs/foo" "$lim/python/pkgs/bar"
-printf '{ }: { }\n' > "$lim/pkgs/foo/default.nix"
-printf '{ }: { }\n' > "$lim/python/pkgs/bar/default.nix"
-git -C "$lim" init -q
-git -C "$lim" -c user.email=t@t -c user.name=t add -A
-git -C "$lim" -c user.email=t@t -c user.name=t commit -qm base
-printf '# x\n' >> "$lim/pkgs/foo/default.nix"
-printf '# x\n' >> "$lim/python/pkgs/bar/default.nix"
-preview="$(cd "$lim" && "$OCR" review --preview 2>&1)"
-if grep -q 'provider directories (pkgs/)' <<<"$preview" \
-   && grep -q 'python/pkgs/bar/default.nix' <<<"$preview"; then
-  pass "root pkgs/ excluded as provider dir; python/pkgs/ reviewed"
-else
-  fail "provider-directory behaviour changed; re-check documented limitation"
 fi
 
 # ── Summary ─────────────────────────────────────────────────────────────────

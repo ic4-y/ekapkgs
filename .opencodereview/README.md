@@ -16,7 +16,7 @@ for. This directory supplies the ekapkgs-specific rules.
 ## How OCR resolves these rules
 
 OCR resolves a rule for each changed file through four layers, in order; the
-first matching entry wins (`v1.12.11`):
+first matching entry wins (`v1.13.3`):
 
 1. `--rule <path>` CLI override
 2. **`<repo>/.opencodereview/rule.json`** ← this file
@@ -66,37 +66,28 @@ adding its token to that oracle as well; the oracle is what makes the list
 enforceable, not a claim that no second edit exists. Do not restate the list
 anywhere else.
 
-## Known limitation: root `pkgs/` is never reviewed
+## Review scope: the root `pkgs/` is reviewable
 
-OCR unconditionally excludes a fixed set of "provider directories" at the
-repository root before rules are even considered. That list includes `pkgs/`
-(`internal/diff/git.go`, `providerDirIgnoreDirs`). Consequences:
+OCR drops files under a fixed set of "provider directories" at the repository
+root before rules are even considered (`internal/diff/git.go`,
+`providerDirIgnoreDirs`). That list used to include `pkgs/`, which made every
+file under a repository-root `pkgs/` — where the new packages live —
+unreviewable, with no rule able to re-admit it. It was reported upstream as
+[alibaba/open-code-review#1654](https://github.com/alibaba/open-code-review/issues/1654)
+and fixed by [alibaba/open-code-review#1642](https://github.com/alibaba/open-code-review/pull/1642)
+(merge commit `313519f`), which landed in v1.13.3.
 
-- Files under **root `pkgs/`** are reported by `ocr review` as
-  _"in provider directories (pkgs/) — not reviewable"_ and are **never sent to
-  the model**. The `include` field in `rule.json` cannot re-admit them; the
-  comment in the source is explicit that "a `.gitignore` negation cannot
-  re-admit one of these paths", and this was confirmed empirically.
-- `ocr rules check pkgs/<name>/default.nix` *does* resolve the rule (the filter
-  only applies during `ocr review`), so the limitation is invisible unless you
-  look at what a review actually selects.
-
-Everything else is reviewable and covered by the single `**/*.nix` entry:
+The packaged open-code-review in this repository is v1.13.3, so the whole tree
+is reviewable and covered by the single `**/*.nix` entry: root `pkgs/`,
 `python/pkgs/`, `perl/pkgs/`, `writers/pkgs/`, `pkgs-many/`, `ekaos/modules/`,
 root-level `*.nix` (`top-level.nix`, `all-packages.nix`, `pkgs-module.nix`,
 `python-packages.nix`, …), and `ci/`.
 
-Because `pkgs/` is where new packages live, this is a **hard blocker for the
-primary goal** while OCR 1.12.11 is unpatched. The fix is to remove `"pkgs/"`
-from `providerDirIgnoreDirs` in the packaged open-code-review (or upstream it),
-which is outside this repository's control and therefore Phase-1 follow-up work.
-Issue tracking is disabled on this fork, so the follow-up is tracked in-tree
-rather than in a forge issue: `test.sh` pins the current behaviour, so when the
-upstream list changes the assertion fails and points back at this section.
-
-A related follow-up: `test.sh` is not yet run by CI — open-code-review is not
-packaged on `master`, so there is nothing for a workflow to invoke. Until it is,
-the spec is local-only and `test.sh` skips cleanly when the binary is absent.
+That guarantee is pinned by the package, not by this directory:
+`open-code-review.tests.reviewScope` builds a throwaway git repository, runs
+`ocr review --preview`, and asserts that a root `pkgs/` file is inside the
+review set and that nothing is dropped as a provider directory. `ci/tests.sh`
+runs it in CI. `test.sh` deliberately does not restate it — one fact, one home.
 
 ## Adding or changing a rule
 
@@ -127,7 +118,10 @@ the spec is local-only and `test.sh` skips cleanly when the binary is absent.
 - the expected inverted-convention tokens are present on `- MUST NOT` lines in
   the registry, and the pure-prohibition tokens appear nowhere else;
 - resolution semantics hold: file-reference inlining, replacement without
-  `merge_system_rule`, missing-reference fallback, and sibling first-match-wins;
-- the documented `pkgs/` provider-directory exclusion still holds.
+  `merge_system_rule`, missing-reference fallback, and sibling first-match-wins.
+
+The review scope itself — that a root `pkgs/` is inside the review set — is
+pinned by `open-code-review.tests.reviewScope` and run by `ci/tests.sh`, not
+here.
 
 It skips cleanly (exit 0) when the OCR binary is not installed.
