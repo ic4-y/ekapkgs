@@ -55,11 +55,9 @@ buildGoModule (finalAttrs: {
       version = "v${finalAttrs.version} (${gitCommit})";
     };
 
-    # Upstream v1.13.3 (alibaba/open-code-review#1642) dropped the literal
-    # "pkgs/" from its provider-directory blocklist, so a repository-root
-    # pkgs/ is reviewable again. Pin that here: the blocklist is compiled into
-    # the binary and silent when it bites — a review would come back "clean"
-    # with every Nix package source dropped.
+    # Upstream v1.13.3 fixed alibaba/open-code-review#1654: the literal
+    # "pkgs/" left the provider-directory blocklist, so a repository-root
+    # pkgs/ is reviewable again. Pin that here — see ./test.nix.
     reviewScope = callPackage ./test.nix { open-code-review = finalAttrs.finalPackage; };
   };
 

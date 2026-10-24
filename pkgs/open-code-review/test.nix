@@ -3,10 +3,15 @@
 # Upstream compiles a blocklist of "provider directories" into the binary
 # (internal/diff/git.go). A file under one of them is dropped before the
 # per-file selection gates run, so no rule can bring it back and the tool
-# reports a review with the file silently missing. Upstream v1.13.3
-# (alibaba/open-code-review#1642) removed the literal "pkgs/" from that list;
-# before it, every file under a repository-root pkgs/ — where Nix package
-# sources live — was dropped.
+# reports a review with the file silently missing. The list used to contain
+# "pkgs/", which made every file under a repository-root pkgs/ — where Nix
+# package sources live — disappear from the review.
+#
+# That was reported upstream as alibaba/open-code-review#1654 and fixed by
+# alibaba/open-code-review#1642 (merge commit 313519f), which landed in
+# v1.13.3. Note that #1642's title and commit message read "include `pkgs/`
+# as a provider directory for NixPkgs" — the opposite of what the patch
+# does; #1654's title is the accurate statement of the defect.
 #
 # The check runs offline: `ocr review --preview` returns before the LLM
 # runtime is loaded (cmd/opencodereview/review_cmd.go), so no API key and no
