@@ -1,6 +1,10 @@
 name: Setup Nix
 description: Install Nix with the ekala cache substituter.
 
+# The substituter and its trusted key are also in flake.nix's nixConfig. The
+# two cannot be merged: ci/eval.sh runs `nix-instantiate ci/eval.nix`, a path
+# rather than a flake, and only flake-targeted commands pick up nixConfig. A key
+# rotation therefore touches both files.
 runs:
   using: composite
   steps:
