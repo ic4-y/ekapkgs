@@ -1,0 +1,11 @@
+name: Setup Nix
+description: Install Nix with the ekala cache substituter.
+
+runs:
+  using: composite
+  steps:
+    - uses: cachix/install-nix-action@v30
+      with:
+        extra_nix_config: |
+          extra-substituters = https://ekala-corepkgs.cachix.org
+          extra-trusted-public-keys = ekala-corepkgs.cachix.org-1:DcZV+vegWoEzacbSdXFXU4S7728C0eS9RfGpKeyHd6w=

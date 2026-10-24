@@ -13,11 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: cachix/install-nix-action@v30
-      with:
-        extra_nix_config: |
-          extra-substituters = https://ekala-corepkgs.cachix.org
-          extra-trusted-public-keys = ekala-corepkgs.cachix.org-1:DcZV+vegWoEzacbSdXFXU4S7728C0eS9RfGpKeyHd6w=
+    - uses: ./.github/actions/setup-nix
     - name: Nix Lint
       run: nix fmt . -- --ci
 
@@ -27,11 +23,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: cachix/install-nix-action@v30
-      with:
-        extra_nix_config: |
-          extra-substituters = https://ekala-corepkgs.cachix.org
-          extra-trusted-public-keys = ekala-corepkgs.cachix.org-1:DcZV+vegWoEzacbSdXFXU4S7728C0eS9RfGpKeyHd6w=
+    - uses: ./.github/actions/setup-nix
     - name: Evaluate all packages
       run: ./ci/eval.sh
 
@@ -44,11 +36,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: cachix/install-nix-action@v30
-      with:
-        extra_nix_config: |
-          extra-substituters = https://ekala-corepkgs.cachix.org
-          extra-trusted-public-keys = ekala-corepkgs.cachix.org-1:DcZV+vegWoEzacbSdXFXU4S7728C0eS9RfGpKeyHd6w=
+    - uses: ./.github/actions/setup-nix
     - name: Package tests
       run: ./ci/tests.sh
-
