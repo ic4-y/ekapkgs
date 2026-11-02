@@ -251,4 +251,40 @@ final: prev: {
     };
   };
 
+  onnxruntime = final.buildPythonPackage {
+    inherit (final.pkgs.onnxruntime) pname version;
+    format = "wheel";
+    src = final.pkgs.onnxruntime.dist;
+
+    unpackPhase = ''
+      cp -r $src dist
+      chmod +w dist
+    '';
+
+    nativeBuildInputs = [ final.pkgs.autoPatchelfHook ];
+
+    pythonRemoveDeps = [
+      "flatbuffers"
+      "protobuf"
+      "sympy"
+    ];
+
+    buildInputs = [
+      final.pkgs.oneDNN
+      final.pkgs.re2
+      final.pkgs.onnxruntime.protobuf
+      final.pkgs.onnxruntime
+    ];
+
+    dependencies = with final; [
+      coloredlogs
+      numpy
+      packaging
+    ];
+
+    pythonImportsCheck = [ "onnxruntime" ];
+
+    meta = final.pkgs.onnxruntime.meta;
+  };
+
 }
